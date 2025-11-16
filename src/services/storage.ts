@@ -1,26 +1,77 @@
 // src/services/storage.ts
-// Stub para AsyncStorage. Usamos um mock in-memory por enquanto.
-// Em um app real com Expo Web, @react-native-async-storage/async-storage
-// usaria o localStorage do navegador.
 
-const MOCK_DB = {
+import { User, RoutineItem, PECSCategory, PECSButton } from '../data/types';
+
+// Tipamos o mock DB corretamente para impedir never[]
+interface MockDB {
+  user: User | null;
+  routine: RoutineItem[];
+  pecsCategories: PECSCategory[];
+  pecsButtons: PECSButton[];
+}
+
+// Banco em memória
+const MOCK_DB: MockDB = {
   user: null,
   routine: [],
+  pecsCategories: [],
+  pecsButtons: [],
 };
 
 export const storageService = {
-  saveUser: async (user: any) => {
-    console.log('[STORAGE STUB] Salvando usuário:', user);
+  /* ============================
+   * USER
+   * ============================ */
+  saveUser: async (user: User) => {
+    console.log('[STORAGE] Salvando usuário:', user);
     MOCK_DB.user = user;
     return true;
   },
-  loadUser: async () => {
-    console.log('[STORAGE STUB] Carregando usuário.');
-    return MOCK_DB.user;
+
+  loadUser: async (): Promise<User | null> => {
+    console.log('[STORAGE] Carregando usuário.');
+    return MOCK_DB.user ?? null;
   },
-  saveRoutine: async (routine: any) => {
-    console.log('[STORAGE STUB] Salvando rotina.');
-    MOCK_DB.routine = routine;
+
+  /* ============================
+   * ROUTINE
+   * ============================ */
+  saveRoutine: async (routine: RoutineItem[]) => {
+    console.log('[STORAGE] Salvando rotina.');
+    MOCK_DB.routine = routine ?? [];
     return true;
+  },
+
+  loadRoutine: async (): Promise<RoutineItem[]> => {
+    console.log('[STORAGE] Carregando rotina.');
+    return MOCK_DB.routine ?? [];
+  },
+
+  /* ============================
+   * PECS CATEGORIES
+   * ============================ */
+  savePecsCategories: async (categories: PECSCategory[]) => {
+    console.log('[STORAGE] Salvando PECS categories.');
+    MOCK_DB.pecsCategories = categories ?? [];
+    return true;
+  },
+
+  loadPecsCategories: async (): Promise<PECSCategory[]> => {
+    console.log('[STORAGE] Carregando PECS categories.');
+    return MOCK_DB.pecsCategories ?? [];
+  },
+
+  /* ============================
+   * PECS BUTTONS
+   * ============================ */
+  savePecsButtons: async (buttons: PECSButton[]) => {
+    console.log('[STORAGE] Salvando PECS buttons.');
+    MOCK_DB.pecsButtons = buttons ?? [];
+    return true;
+  },
+
+  loadPecsButtons: async (): Promise<PECSButton[]> => {
+    console.log('[STORAGE] Carregando PECS buttons.');
+    return MOCK_DB.pecsButtons ?? [];
   },
 };

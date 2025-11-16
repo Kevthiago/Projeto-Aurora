@@ -1,16 +1,22 @@
-// src/context/AppContext.tsx
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { MOCK_USER, MOCK_ROUTINE, MOCK_PECS_BUTTONS, MOCK_PECS_CATEGORIES } from '../data/mockData';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  MOCK_USER,
+  MOCK_ROUTINE,
+  MOCK_PECS_BUTTONS,
+  MOCK_PECS_CATEGORIES
+} from '../data/mockData';
+
 import { User, RoutineItem, PECSButton, PECSCategory } from '../data/types';
 import { ttsService } from '../services/tts';
-import { Linking, Platform } from 'react-native';
 import { storageService } from '../services/storage';
+import { Linking, Platform } from 'react-native';
 
 interface AppContextType {
   user: User | null;
   routine: RoutineItem[];
   pecsCategories: PECSCategory[];
   pecsButtons: PECSButton[];
+
   updateUser: (name: string, phone: string) => void;
 
   addRoutineItem: (item: RoutineItem) => void;
@@ -18,37 +24,58 @@ interface AppContextType {
   removeRoutineItem: (id: string) => void;
   toggleRoutineItem: (id: string) => void;
 
+  addPecsCategory: (cat: PECSCategory) => void;
   addPecsButton: (btn: PECSButton) => void;
   editPecsButton: (id: string, changes: Partial<PECSButton>) => void;
   removePecsButton: (id: string) => void;
 
   speak: (text: string) => void;
-  notifyCaregiverWhatsApp: (message: string) => void;
+  notifyCaregiverWhatsApp: (msg: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-interface AppProviderProps {
-  children?: React.ReactNode;
-}
+export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
 
-export const AppProvider = ({ children }: AppProviderProps) => {
-  const [user, setUser] = useState<User | null>(MOCK_USER);
-  const [routine, setRoutine] = useState<RoutineItem[]>(MOCK_ROUTINE);
-  const [pecsCategories] = useState<PECSCategory[]>(MOCK_PECS_CATEGORIES);
-  const [pecsButtons, setPecsButtons] = useState<PECSButton[]>(MOCK_PECS_BUTTONS);
+  const [user, setUser] = useState<User | null>(null);
+  const [routine, setRoutine] = useState<RoutineItem[]>([]);
+  const [pecsCategories, setPecsCategories] = useState<PECSCategory[]>([]);
+  const [pecsButtons, setPecsButtons] = useState<PECSButton[]>([]);
 
-  // Configurações do usuário/cuidador
+  // ==========================================================
+  // 🔄 CORREÇÃO: Carregamento com fallback REAL (sem bug do [])
+  // ==========================================================
+  useEffect(() => {
+    const loadAll = async () => {
+      const u = await storageService.loadUser();
+      const r = await storageService.loadRoutine();
+      const c = await storageService.loadPecsCategories();
+      const b = await storageService.loadPecsButtons();
+
+      setUser(u ?? MOCK_USER);
+      setRoutine(r.length > 0 ? r : MOCK_ROUTINE);
+      setPecsCategories(c.length > 0 ? c : MOCK_PECS_CATEGORIES);
+      setPecsButtons(b.length > 0 ? b : MOCK_PECS_BUTTONS);
+    };
+
+    loadAll();
+  }, []);
+
+  // ==========================================================
+  // USER
+  // ==========================================================
   const updateUser = (name: string, phone: string) => {
-    if (user) {
-      const updated = { ...user, name, phone };
-      setUser(updated);
-      storageService.saveUser(updated);
-      alert('Nome/telefone do usuário atualizado!');
-    }
+    if (!user) return;
+
+    const updated: User = { ...user, name, phone };
+    setUser(updated);
+    storageService.saveUser(updated);
+    alert("Informações atualizadas!");
   };
 
-  // Rotina CRUD
+  // ==========================================================
+  // ROTINA
+  // ==========================================================
   const addRoutineItem = (item: RoutineItem) => {
     setRoutine(prev => {
       const updated = [...prev, item];
@@ -56,13 +83,15 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       return updated;
     });
   };
+
   const editRoutineItem = (id: string, changes: Partial<RoutineItem>) => {
     setRoutine(prev => {
-      const updated = prev.map(r => r.id === id ? { ...r, ...changes } : r);
+      const updated = prev.map(r => (r.id === id ? { ...r, ...changes } : r));
       storageService.saveRoutine(updated);
       return updated;
     });
   };
+
   const removeRoutineItem = (id: string) => {
     setRoutine(prev => {
       const updated = prev.filter(r => r.id !== id);
@@ -70,72 +99,117 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       return updated;
     });
   };
+
   const toggleRoutineItem = (id: string) => {
-    setRoutine(prev =>
-      prev.map(r =>
+    setRoutine(prev => {
+      const updated = prev.map(r =>
         r.id === id ? { ...r, completed: !r.completed } : r
-      )
-    );
+      );
+      storageService.saveRoutine(updated);
+      return updated;
+    });
   };
 
-  // CRUD dos botões PECS
+  // ==========================================================
+  // CATEGORIAS PECS
+  // ==========================================================
+  const addPecsCategory = (cat: PECSCategory) => {
+    setPecsCategories(prev => {
+      const updated = [...prev, cat];
+      storageService.savePecsCategories(updated);
+      return updated;
+    });
+  };
+
+  // ==========================================================
+  // BOTÕES PECS
+  // ==========================================================
   const addPecsButton = (btn: PECSButton) => {
-    setPecsButtons(prev => [...prev, btn]);
-    // Pode persistir se desejar!
+    setPecsButtons(prev => {
+      const updated = [...prev, btn];
+      storageService.savePecsButtons(updated);
+      return updated;
+    });
   };
+
   const editPecsButton = (id: string, changes: Partial<PECSButton>) => {
-    setPecsButtons(prev => prev.map(b => b.id === id ? { ...b, ...changes } : b));
+    setPecsButtons(prev => {
+      const updated = prev.map(b => (b.id === id ? { ...b, ...changes } : b));
+      storageService.savePecsButtons(updated);
+      return updated;
+    });
   };
+
   const removePecsButton = (id: string) => {
-    setPecsButtons(prev => prev.filter(b => b.id !== id));
+    setPecsButtons(prev => {
+      const updated = prev.filter(b => b.id !== id);
+      storageService.savePecsButtons(updated);
+      return updated;
+    });
   };
 
-  // TTS
-  const speak = (text: string) => ttsService.speak(text);
+  // ==========================================================
+  // TALK
+  // ==========================================================
+  const speak = (text: string) => {
+    ttsService.speak(text);
+  };
 
-  // Notificação WhatsApp (com fallback web)
-  const notifyCaregiverWhatsApp = (message: string) => {
+  // ==========================================================
+  // WHATSAPP
+  // ==========================================================
+  const notifyCaregiverWhatsApp = (msg: string) => {
     if (!user?.phone) {
-      alert('Número do cuidador não cadastrado!');
+      alert("Nenhum telefone de cuidador registrado!");
       return;
     }
-    let url = '';
-    // Para web (Expo Web/browser), abre WhatsApp Web
-    if (Platform.OS === 'web') {
-      url = `https://wa.me/${user.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-      window.open(url, '_blank');
+
+    const phone = user.phone.replace(/\D/g, "");
+    const encoded = encodeURIComponent(msg);
+
+    if (Platform.OS === "web") {
+      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
     } else {
-      // Para mobile
-      url = `whatsapp://send?phone=${user.phone}&text=${encodeURIComponent(message)}`;
-      Linking.openURL(url);
+      Linking.openURL(`whatsapp://send?phone=${phone}&text=${encoded}`);
     }
   };
 
-  const value = {
-    user,
-    routine,
-    pecsCategories,
-    pecsButtons,
-    updateUser,
-    addRoutineItem,
-    editRoutineItem,
-    removeRoutineItem,
-    toggleRoutineItem,
-    addPecsButton,
-    editPecsButton,
-    removePecsButton,
-    speak,
-    notifyCaregiverWhatsApp,
-  };
+  return (
+    <AppContext.Provider
+      value={{
+        user,
+        routine,
+        pecsCategories,
+        pecsButtons,
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+        updateUser,
+
+        addRoutineItem,
+        editRoutineItem,
+        removeRoutineItem,
+        toggleRoutineItem,
+
+        addPecsCategory,
+        addPecsButton,
+        editPecsButton,
+        removePecsButton,
+
+        speak,
+        notifyCaregiverWhatsApp
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
 };
 
-// Hook customizado para fácil acesso
+// ==========================================================
+// HOOK
+// ==========================================================
 export const useAppContext = () => {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useAppContext deve ser usado dentro de um AppProvider');
+  const ctx = useContext(AppContext);
+  if (!ctx) {
+    throw new Error("useAppContext deve ser usado dentro de AppProvider");
   }
-  return context;
+  return ctx;
 };
