@@ -21,7 +21,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.snack6a44c5cb86504acfbde2dd596d42642b"
     },
     "web": {
       "favicon": "./assets/favicon.png"

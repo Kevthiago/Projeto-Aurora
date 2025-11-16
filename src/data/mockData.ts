@@ -6,7 +6,10 @@ export const MOCK_USER: User = {
   name: 'Leo',
   age: 7,
   avatarPlaceholder: 'avatar-1',
+    phone: '+5531999999999'
 };
+
+
 
 export const MOCK_ROUTINE: RoutineItem[] = [
   {

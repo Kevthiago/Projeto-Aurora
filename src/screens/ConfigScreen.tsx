@@ -1,6 +1,3 @@
-// src/screens/ConfigScreen.tsx
-// Tela de configuração (Modo Cuidador).
-// Mantida simples, focando em editar o nome do usuário.
 import React, { useState } from 'react';
 import {
   View,
@@ -9,21 +6,94 @@ import {
   Button,
   StyleSheet,
   ScrollView,
+  FlatList,
+  TouchableOpacity,
 } from 'react-native';
 import { useAppContext } from '../context/AppContext';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { RoutineItem, PECSButton } from '../data/types';
 
 const ConfigScreen = () => {
-  const { user, updateUser } = useAppContext();
-  const [name, setName] = useState(user?.name || '');
+  const {
+    user,
+    updateUser,
+    routine,
+    addRoutineItem,
+    editRoutineItem,
+    removeRoutineItem,
+    pecsButtons,
+    addPecsButton,
+    editPecsButton,
+    removePecsButton,
+  } = useAppContext();
 
-  const handleSave = () => {
-    updateUser(name);
+  // Estado do perfil
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+
+  // Estado do CRUD de rotina
+  const [newRoutineTitle, setNewRoutineTitle] = useState('');
+  const [editRoutineId, setEditRoutineId] = useState<string | null>(null);
+  const [editRoutineTitle, setEditRoutineTitle] = useState('');
+
+  // Estado do CRUD de PECS
+  const [newPecsText, setNewPecsText] = useState('');
+  const [editPecsId, setEditPecsId] = useState<string | null>(null);
+  const [editPecsText, setEditPecsText] = useState('');
+
+  // Salvar usuário/cuidador
+  const handleSaveProfile = () => {
+    updateUser(name, phone);
+  };
+
+  // Adicionar/editar rotina
+  const handleAddRoutine = () => {
+    if (newRoutineTitle.trim()) {
+      addRoutineItem({
+        id: Date.now().toString(),
+        title: newRoutineTitle,
+        time: '09:00',
+        icon: 'calendar',
+        completed: false,
+        category: '',
+      });
+      setNewRoutineTitle('');
+    }
+  };
+  const handleEditRoutine = () => {
+    if (editRoutineId && editRoutineTitle.trim()) {
+      editRoutineItem(editRoutineId, { title: editRoutineTitle });
+      setEditRoutineId(null);
+      setEditRoutineTitle('');
+    }
+  };
+
+  // Adicionar/editar PECS
+  const handleAddPecs = () => {
+    if (newPecsText.trim()) {
+      addPecsButton({
+        id: Date.now().toString(),
+        categoryId: 'c1', // Ajuste ou permita editar categoria
+        text: newPecsText,
+        icon: 'star',
+        audioText: newPecsText,
+        notifyWhatsApp: true, // Pode adicionar esse campo para testar notificação
+      });
+      setNewPecsText('');
+    }
+  };
+  const handleEditPecs = () => {
+    if (editPecsId && editPecsText.trim()) {
+      editPecsButton(editPecsId, { text: editPecsText });
+      setEditPecsId(null);
+      setEditPecsText('');
+    }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Perfil */}
       <Text style={styles.header}>Perfil da Criança</Text>
       <Text style={styles.label}>Nome:</Text>
       <TextInput
@@ -31,27 +101,85 @@ const ConfigScreen = () => {
         value={name}
         onChangeText={setName}
         placeholder="Nome da Criança"
-        accessibilityLabel="Campo de entrada para o nome da criança"
       />
-      <Button title="Salvar Nome" onPress={handleSave} color={colors.primary} />
+      <Text style={styles.label}>Telefone do cuidador:</Text>
+      <TextInput
+        style={styles.input}
+        value={phone}
+        onChangeText={setPhone}
+        placeholder="Ex: +5531999999999"
+        keyboardType="phone-pad"
+      />
+      <Button title="Salvar Perfil" onPress={handleSaveProfile} color={colors.primary} />
 
       <View style={styles.divider} />
 
-      {/* Placeholders para outras seções */}
+      {/* Rotina CRUD */}
       <Text style={styles.header}>Editar Rotina</Text>
-      <Text style={styles.placeholder}>
-        (Aqui entraria um editor de lista para 'Minha Rotina')
-      </Text>
-      <Button title="Adicionar Atividade" onPress={() => {}} disabled />
+      <TextInput
+        style={styles.input}
+        value={editRoutineId ? editRoutineTitle : newRoutineTitle}
+        onChangeText={editRoutineId ? setEditRoutineTitle : setNewRoutineTitle}
+        placeholder={editRoutineId ? "Editar atividade" : "Nova atividade"}
+      />
+      <Button
+        title={editRoutineId ? "Salvar Edição" : "Adicionar Atividade"}
+        onPress={editRoutineId ? handleEditRoutine : handleAddRoutine}
+        color={colors.primary}
+      />
+      <FlatList
+        data={routine}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ flex: 1 }}>{item.title}</Text>
+            <TouchableOpacity onPress={() => {
+              setEditRoutineId(item.id);
+              setEditRoutineTitle(item.title);
+            }}>
+              <Text style={{ color: colors.accent, marginRight: 20 }}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => removeRoutineItem(item.id)}>
+              <Text style={{ color: colors.danger }}>Remover</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
 
       <View style={styles.divider} />
 
-      <Text style={styles.header}>Editar Botões "Quero Dizer"</Text>
-      <Text style={styles.placeholder}>
-        (Aqui entraria um editor de grade para os botões PECS,
-        incluindo upload de imagem e gravação de áudio.)
-      </Text>
-      <Button title="Adicionar Botão" onPress={() => {}} disabled />
+      {/* PECS CRUD */}
+      <Text style={styles.header}>Editar Botões 'Quero Dizer'</Text>
+      <TextInput
+        style={styles.input}
+        value={editPecsId ? editPecsText : newPecsText}
+        onChangeText={editPecsId ? setEditPecsText : setNewPecsText}
+        placeholder={editPecsId ? "Editar frase" : "Nova frase PECS"}
+      />
+      <Button
+        title={editPecsId ? "Salvar Edição" : "Adicionar Botão"}
+        onPress={editPecsId ? handleEditPecs : handleAddPecs}
+        color={colors.primary}
+      />
+      <FlatList
+        data={pecsButtons}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ flex: 1 }}>{item.text}</Text>
+            <TouchableOpacity onPress={() => {
+              setEditPecsId(item.id);
+              setEditPecsText(item.text);
+            }}>
+              <Text style={{ color: colors.accent, marginRight: 20 }}>Editar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => removePecsButton(item.id)}>
+              <Text style={{ color: colors.danger }}>Remover</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+
     </ScrollView>
   );
 };
@@ -71,6 +199,7 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
     color: colors.text,
     marginBottom: 16,
+    marginTop: 26,
   },
   label: {
     ...typography.body,
@@ -84,7 +213,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   divider: {
     height: 1,

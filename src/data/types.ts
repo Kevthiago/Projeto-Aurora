@@ -6,6 +6,7 @@ export interface User {
   name: string;
   age: number;
   avatarPlaceholder: string; // ex: 'avatar-1'
+  phone: string; 
 }
 
 export interface RoutineItem {
@@ -16,6 +17,7 @@ export interface RoutineItem {
   completed: boolean;
   category?: string; // <-- ADICIONE ESTA LINHA (torna a categoria opcional)
 }
+
 
 export interface PECSCategory {
   id: string;
@@ -28,6 +30,7 @@ export interface PECSButton {
   categoryId: string;
   text: string;
   icon: string; // Nome do ícone
-  // O áudio real seria um URI, aqui usamos o texto para o TTS
+  // O áudio real seria um URI, aqui usamos o texto paSra o TTS
   audioText: string;
+  notifyWhatsApp?: boolean;
 }
