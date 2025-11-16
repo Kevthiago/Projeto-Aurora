@@ -124,13 +124,13 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   // ==========================================================
   // BOTÕES PECS
   // ==========================================================
-  const addPecsButton = (btn: PECSButton) => {
-    setPecsButtons(prev => {
-      const updated = [...prev, btn];
-      storageService.savePecsButtons(updated);
-      return updated;
-    });
-  };
+ const addPecsButton = (btn: PECSButton) => {
+  setPecsButtons(prev => {
+    const updated = [...prev, btn];
+    storageService.savePecsButtons(updated); // Salva automaticamente
+    return updated;
+  });
+};
 
   const editPecsButton = (id: string, changes: Partial<PECSButton>) => {
     setPecsButtons(prev => {

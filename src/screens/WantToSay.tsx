@@ -9,36 +9,37 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppContext } from "../context/AppContext";
-import PECSButton from "../components/PECSButton";
 import { colors } from "../theme/colors";
 import { typography } from "../theme/typography";
 import { PECSButton as PECSButtonType } from "../data/types";
 
 const WantToSayScreen = () => {
-  const { pecsCategories, pecsButtons, speak, notifyCaregiverWhatsApp } =
-    useAppContext();
+  const {
+    pecsCategories,
+    pecsButtons,
+    speak,
+    notifyCaregiverWhatsApp,
+  } = useAppContext();
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
-  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Botões filtrados pela categoria selecionada
-  const filteredButtons = useMemo(() => {
-    if (!selectedCategoryId) return [];
-    return pecsButtons.filter((btn) => btn.categoryId === selectedCategoryId);
-  }, [pecsButtons, selectedCategoryId]);
+ const filteredButtons = useMemo(() => {
+  if (!selectedCategoryId) return [];
+  return pecsButtons.filter((btn) => btn.categoryId === selectedCategoryId);
+}, [pecsButtons, selectedCategoryId]);
 
   const handlePressButton = (item: PECSButtonType) => {
     speak(item.audioText);
     notifyCaregiverWhatsApp(`Seu filho selecionou: ${item.text}`);
   };
 
-  // VOLTAR para a lista de categorias
+  // Botão de voltar para categorias
   const goBack = () => setSelectedCategoryId(null);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ===================== TELA 1: CATEGORIAS ===================== */}
+      {/* ========== TELA DE CATEGORIAS ========== */}
       {!selectedCategoryId && (
         <FlatList
           data={pecsCategories}
@@ -64,39 +65,39 @@ const WantToSayScreen = () => {
         />
       )}
 
-      {/* ===================== TELA 2: BOTÕES DA CATEGORIA ===================== */}
+      {/* ========== TELA DE BOTÕES DA CATEGORIA ========== */}
       {selectedCategoryId && (
-  <View style={{ flex: 1 }}>
-
-    <FlatList
-      data={filteredButtons}
-      keyExtractor={(item) => item.id}
-      numColumns={3}
-      contentContainerStyle={styles.gridButtons}
-      columnWrapperStyle={{ justifyContent: 'space-between' }}
-      ListHeaderComponent={
-        <Text style={styles.headerSmall}>
-          {pecsCategories.find((c) => c.id === selectedCategoryId)?.name}
-        </Text>
-      }
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.buttonCard}
-          onPress={() => handlePressButton(item)}
-        >
-          <MaterialCommunityIcons
-            name={item.icon as any}
-            size={40}
-            color={colors.primary}
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity onPress={goBack} style={styles.backBtn}>
+            <Text style={styles.backTxt}>← Voltar</Text>
+          </TouchableOpacity>
+          <FlatList
+            data={filteredButtons}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            contentContainerStyle={styles.gridButtons}
+            columnWrapperStyle={{ justifyContent: "space-between" }}
+            ListHeaderComponent={
+              <Text style={styles.headerSmall}>
+                {pecsCategories.find((c) => c.id === selectedCategoryId)?.name}
+              </Text>
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.buttonCard}
+                onPress={() => handlePressButton(item)}
+              >
+                <MaterialCommunityIcons
+                  name={item.icon as any}
+                  size={40}
+                  color={colors.primary}
+                />
+                <Text style={styles.buttonLabel}>{item.text}</Text>
+              </TouchableOpacity>
+            )}
           />
-          <Text style={styles.buttonLabel}>{item.text}</Text>
-        </TouchableOpacity>
+        </View>
       )}
-    />
-
-  </View>
-)}
-
     </SafeAreaView>
   );
 };
@@ -106,7 +107,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-
   header: {
     ...typography.title,
     fontSize: 26,
@@ -115,7 +115,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: "700",
   },
-
   headerSmall: {
     ...typography.title,
     fontSize: 22,
@@ -124,13 +123,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: "600",
   },
-
   grid: {
     padding: 20,
     gap: 20,
   },
-
-  // ===== CATEGORY CARDS =====
   categoryCard: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -140,55 +136,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     elevation: 4,
-
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
   },
-
   categoryLabel: {
     marginTop: 10,
     fontSize: 16,
     color: colors.text,
     fontWeight: "600",
   },
-
-  // ===== BACK BUTTON =====
-  // GRID da segunda tela
-gridButtons: {
-  padding: 20,
-},
-
-// CARD dos botões da categoria (semelhante à tela inicial)
-buttonCard: {
-  flexBasis: '30%',
-  maxWidth: '30%',
-  
-  backgroundColor: colors.surface,
-  borderRadius: 16,
-  paddingVertical: 20,
-  paddingHorizontal: 10,
-  margin: 6,
-  alignItems: "center",
-  justifyContent: "center",
-  elevation: 3,
-
-  shadowColor: "#000",
-  shadowOpacity: 0.08,
-  shadowOffset: { width: 0, height: 2 },
-  shadowRadius: 4,
-},
-
-
-buttonLabel: {
-  marginTop: 8,
-  textAlign: "center",
-  fontSize: 14,
-  color: colors.text,
-  fontWeight: "600",
-},
-
+  gridButtons: { padding: 20 },
+  buttonCard: {
+    flexBasis: "30%",
+    maxWidth: "30%",
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    margin: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  buttonLabel: {
+    marginTop: 8,
+    textAlign: "center",
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  backBtn: {
+    marginLeft: 10,
+    marginTop: 6,
+    alignSelf: "flex-start",
+  },
+  backTxt: {
+    color: colors.primary,
+    fontSize: 17,
+    fontWeight: "bold",
+  },
 });
 
 export default WantToSayScreen;

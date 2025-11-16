@@ -1,75 +1,88 @@
-// src/components/PECSButton.tsx
-// Botão específico para a grade PECS (Quero Dizer)
-import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  View,
-  Dimensions,
-} from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker'; // npm install @react-native-picker/picker
+import { useAppContext } from '../context/AppContext';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 
-interface PECSButtonProps {
-  iconName: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-  text: string;
-  onPress: () => void;
-}
+// Formulário de cadastro de botão PECS
+const AddPECSButtonForm = () => {
+  const { addPecsButton, pecsCategories } = useAppContext();
 
-// Calcula o tamanho do botão para uma grade 3x3
-// Isso funciona bem no Expo Web também.
-const { width } = Dimensions.get('window');
-const ITEM_MARGIN = 12;
-const ITEM_SIZE = (width - ITEM_MARGIN * 6) / 3 > 120 ? 120 : (width - ITEM_MARGIN * 6) / 3; // Max 120px
+  const [newPecsText, setNewPecsText] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    pecsCategories[0]?.id || ''
+  );
+  const [icon, setIcon] = useState('food-apple-outline'); // Ícone padrão
 
-const PECSButton: React.FC<PECSButtonProps> = ({
-  iconName,
-  text,
-  onPress,
-}) => {
-  const accessibilityLabel = `Dizer: ${text}`;
+  const handleAddPecsButton = () => {
+    if (!newPecsText.trim() || !selectedCategoryId) return;
+
+    // Debug para garantir que o id está correto
+    console.log('Categoria escolhida:', selectedCategoryId);
+
+    // ADICIONA O BOTÃO USANDO O ID DA CATEGORIA ESCOLHIDA
+    addPecsButton({
+      id: Date.now().toString(),
+      categoryId: selectedCategoryId, // Usa sempre o id (ex: 'c2' para comida)
+      text: newPecsText,
+      icon: icon,
+      audioText: newPecsText,
+      notifyWhatsApp: true,
+    });
+
+    setNewPecsText('');
+  };
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      accessible={true}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-    >
-      <MaterialCommunityIcons name={iconName} size={ITEM_SIZE * 0.5} color={colors.text} />
-      <Text style={styles.text}>{text}</Text>
-    </TouchableOpacity>
+    <View style={styles.section}>
+      <Text style={styles.label}>Texto do botão PECS:</Text>
+      <TextInput
+        style={styles.input}
+        value={newPecsText}
+        onChangeText={setNewPecsText}
+        placeholder="Ex: Bolo, Lasanha, Parquinho"
+      />
+      <Text style={styles.label}>Categoria:</Text>
+  <Picker
+  selectedValue={selectedCategoryId}
+  onValueChange={setSelectedCategoryId}
+  style={styles.input}
+>
+  {pecsCategories.map(cat => (
+    <Picker.Item key={cat.id} label={cat.name} value={cat.id} />
+  ))}
+</Picker>
+      <Button
+        title="Adicionar Botão"
+        onPress={handleAddPecsButton}
+        color={colors.primary}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: ITEM_SIZE,
-    height: ITEM_SIZE,
+  section: {
+    marginVertical: 20,
+    padding: 16,
     backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
-    margin: ITEM_MARGIN,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderRadius: 8,
   },
-  text: {
+  label: {
     ...typography.body,
-    fontSize: 16, // Um pouco menor para caber
     color: colors.text,
-    marginTop: 8,
-    textAlign: 'center',
+    marginBottom: 8,
+  },
+  input: {
+    ...typography.body,
+    backgroundColor: colors.background,
+    borderColor: colors.disabled,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
   },
 });
 
-export default PECSButton;
+export default AddPECSButtonForm;

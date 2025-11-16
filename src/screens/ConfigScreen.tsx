@@ -36,8 +36,8 @@ const ConfigScreen: React.FC = () => {
   // Categorias - considere mover para contexto se for dinâmica
   const pecsCategories = useMemo(
     () => [
-      { id: 'c1', name: 'Comida' },
-      { id: 'c2', name: 'Sentimentos' },
+      { id: 'c1', name: 'Sentimentos' },
+      { id: 'c2', name: 'Comida' },
       { id: 'c3', name: 'Pessoas' },
       { id: 'c4', name: 'Objetos' },
       { id: 'c5', name: 'Lugares' },
