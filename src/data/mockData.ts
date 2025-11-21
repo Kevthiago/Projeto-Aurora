@@ -60,7 +60,6 @@ export const MOCK_PECS_CATEGORIES: PECSCategory[] = [
 
   // ========== NOVAS CATEGORIAS MODELO (adicione aqui) ==========
   { id: 'c4', name: 'Ações', icon: 'run' },
-  { id: 'c5', name: 'Rotina', icon: 'clock-outline' },
   { id: 'c6', name: 'Pessoas', icon: 'account-group-outline' },
   { id: 'c7', name: 'Brinquedos', icon: 'puzzle-outline' },
   { id: 'c8', name: 'Saúde', icon: 'hospital-box-outline' },
