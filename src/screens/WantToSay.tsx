@@ -24,22 +24,23 @@ const WantToSayScreen = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Botões filtrados pela categoria selecionada
- const filteredButtons = useMemo(() => {
-  if (!selectedCategoryId) return [];
-  return pecsButtons.filter((btn) => btn.categoryId === selectedCategoryId);
-}, [pecsButtons, selectedCategoryId]);
+  const filteredButtons = useMemo(() => {
+    if (!selectedCategoryId) return [];
+    return pecsButtons.filter((btn) => btn.categoryId === selectedCategoryId);
+  }, [pecsButtons, selectedCategoryId]);
 
+  // Envio automático: fala e já manda WhatsApp!
   const handlePressButton = (item: PECSButtonType) => {
     speak(item.audioText);
     notifyCaregiverWhatsApp(`Seu filho selecionou: ${item.text}`);
   };
 
-  // Botão de voltar para categorias
+  // Botão de voltar para seleção de categoria
   const goBack = () => setSelectedCategoryId(null);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ========== TELA DE CATEGORIAS ========== */}
+      {/* TELA DE CATEGORIAS */}
       {!selectedCategoryId && (
         <FlatList
           data={pecsCategories}
@@ -65,7 +66,7 @@ const WantToSayScreen = () => {
         />
       )}
 
-      {/* ========== TELA DE BOTÕES DA CATEGORIA ========== */}
+      {/* TELA DE BOTÕES DA CATEGORIA */}
       {selectedCategoryId && (
         <View style={{ flex: 1 }}>
           <TouchableOpacity onPress={goBack} style={styles.backBtn}>

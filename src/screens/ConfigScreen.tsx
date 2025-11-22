@@ -131,11 +131,12 @@ const ConfigScreen: React.FC = () => {
 
   // Remover com confirmação
   const confirmRemovePecs = (id: string) => {
-    Alert.alert('Remover', 'Remover este botão PECS?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: () => removePecsButton(id) },
-    ]);
-  };
+     console.log('Confirma remoção de:', id); // debug
+  Alert.alert('Remover', 'Remover este botão PECS?', [
+    { text: 'Cancelar', style: 'cancel' },
+    { text: 'Remover', style: 'destructive', onPress: () => removePecsButton(id) },
+  ]);
+};
 
   const confirmRemoveRoutine = (id: string) => {
     Alert.alert('Remover', 'Remover esta atividade?', [
@@ -167,32 +168,34 @@ const ConfigScreen: React.FC = () => {
     ));
 
   const renderPecsList = () =>
-    pecsButtons.map(item => (
-      <View key={item.id} style={styles.listRow}>
-        <Text style={styles.itemText}>
-          {item.text}
-          <Text style={styles.itemMeta}>
-            {' '}— {pecsCategories.find(c => c.id === item.categoryId)?.name || '—'}
-          </Text>
+  pecsButtons.map(item => (
+    <View key={item.id} style={styles.listRow}>
+      <Text style={styles.itemText}>
+        {item.text}
+        <Text style={styles.itemMeta}>
+          {' '}— {pecsCategories.find(c => c.id === item.categoryId)?.name || '—'}
         </Text>
+      </Text>
 
-        <TouchableOpacity
-          onPress={() => {
-            setEditPecsId(item.id);
-            setEditPecsText(item.text);
-            setEditPecsCategory(item.categoryId || DEFAULT_CATEGORY);
-          }}
-          style={styles.smallAction}
-        >
-          <Text style={styles.editButton}>Editar</Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => {
+          setEditPecsId(item.id);
+          setEditPecsText(item.text);
+          setEditPecsCategory(item.categoryId || DEFAULT_CATEGORY);
+        }}
+        style={styles.smallAction}
+      >
+        <Text style={styles.editButton}>Editar</Text>
+      </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => confirmRemovePecs(item.id)} style={styles.smallAction}>
-          <Text style={styles.removeButton}>Remover</Text>
-        </TouchableOpacity>
-      </View>
-    ));
-
+      <TouchableOpacity
+        onPress={() => confirmRemovePecs(item.id)}
+        style={styles.smallAction}
+      >
+        <Text style={styles.removeButton}>Remover</Text>
+      </TouchableOpacity>
+    </View>
+  ));
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView

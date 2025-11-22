@@ -46,20 +46,20 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   // 🔄 CORREÇÃO: Carregamento com fallback REAL (sem bug do [])
   // ==========================================================
   useEffect(() => {
-    const loadAll = async () => {
-      const u = await storageService.loadUser();
-      const r = await storageService.loadRoutine();
-      const c = await storageService.loadPecsCategories();
-      const b = await storageService.loadPecsButtons();
+  const loadAll = async () => {
+    const u = await storageService.loadUser();
+    const r = await storageService.loadRoutine();
+    const c = await storageService.loadPecsCategories();
+    const b = await storageService.loadPecsButtons();
 
-      setUser(u ?? MOCK_USER);
-      setRoutine(r.length > 0 ? r : MOCK_ROUTINE);
-      setPecsCategories(c.length > 0 ? c : MOCK_PECS_CATEGORIES);
-      setPecsButtons(b.length > 0 ? b : MOCK_PECS_BUTTONS);
-    };
+    setUser(u ?? MOCK_USER);
+    setRoutine(r.length > 0 ? r : MOCK_ROUTINE);
+    setPecsCategories(c.length > 0 ? c : MOCK_PECS_CATEGORIES);
+    setPecsButtons(b.length > 0 ? b : MOCK_PECS_BUTTONS);
+  };
 
-    loadAll();
-  }, []);
+  loadAll();
+}, []);
 
   // ==========================================================
   // USER
@@ -141,12 +141,14 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   };
 
   const removePecsButton = (id: string) => {
-    setPecsButtons(prev => {
-      const updated = prev.filter(b => b.id !== id);
-      storageService.savePecsButtons(updated);
-      return updated;
-    });
-  };
+      console.log('Remover PECS:', id); // debug do id recebido
+  setPecsButtons(prev => {
+    const updated = prev.filter(b => b.id !== id);
+    console.log('Botões PECS após remoção:', updated); // debug do array atualizado
+    storageService.savePecsButtons(updated);
+    return updated;
+  });
+};
 
   // ==========================================================
   // TALK
