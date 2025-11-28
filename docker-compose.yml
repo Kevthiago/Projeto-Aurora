@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11
+    environment:
+      - MYSQL_ROOT_PASSWORD=changeit
+      - MYSQL_DATABASE=autismapp
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  app:
+    build: .
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/autismapp
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=changeit
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=change-me
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/var/log/autismapp
+
+volumes:
+  db_data:

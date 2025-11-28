@@ -1,0 +1,36 @@
+# Compiled class files
+*.class
+
+# Log file
+*.log
+
+# Maven
+target/
+**/target/
+
+# IDEs
+.idea/
+*.iml
+out/
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+
+# Node
+node_modules/
+
+# ENV
+.env
+
+# Docker
+docker-compose.override.yml
+
+# Sensitive
+secrets.properties
+
+# Arquivo original enviado pelo usuário:
+# (conteúdo do /mnt/data/.gitignore)
