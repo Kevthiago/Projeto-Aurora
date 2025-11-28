@@ -31,6 +31,3 @@ docker-compose.override.yml
 
 # Sensitive
 secrets.properties
-
-# Arquivo original enviado pelo usuário:
-# (conteúdo do /mnt/data/.gitignore)
