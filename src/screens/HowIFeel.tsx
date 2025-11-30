@@ -29,7 +29,7 @@ const POSITIVE_MESSAGES = [
 ];
 
 const HowIFeelScreen = () => {
-  const { notifyCaregiver } = useAppContext();
+  const { notifyCaregiverWhatsApp } = useAppContext();
   const [mode, setMode] = useState<Mode>('menu');
   const [messageIndex, setMessageIndex] = useState(0);
   const [breathePhase, setBreathePhase] = useState<'inspire' | 'expire'>('inspire');
@@ -83,7 +83,7 @@ const HowIFeelScreen = () => {
 
   const handleNeedAMinute = () => {
     setMode('timer');
-    notifyCaregiver('precisa de um minuto.');
+    notifyCaregiverWhatsApp('precisa de um minuto.');
     setTimeout(() => {
       setMode((currentMode) => (currentMode === 'timer' ? 'menu' : currentMode));
     }, 5000); 
