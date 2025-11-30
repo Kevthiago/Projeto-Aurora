@@ -1,5 +1,5 @@
-// ConfigScreen.tsx
-import React, { useState, useMemo } from 'react';
+// src/screens/ConfigScreen.tsx
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppContext } from '../context/AppContext';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { storageService } from '../services/storage';
 
 const DEFAULT_CATEGORY = 'c1';
 
@@ -33,7 +34,7 @@ const ConfigScreen: React.FC = () => {
     removePecsButton,
   } = useAppContext();
 
-  // Categorias - considere mover para contexto se for dinâmica
+  // Categorias
   const pecsCategories = useMemo(
     () => [
       { id: 'c1', name: 'Sentimentos' },
@@ -48,6 +49,41 @@ const ConfigScreen: React.FC = () => {
   // Perfil
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
+
+  // PIN de configuração
+  const [pin, setPin] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [hasPin, setHasPin] = useState(false);
+
+  useEffect(() => {
+    const loadPin = async () => {
+      const savedPin = await storageService.loadConfigPin();
+      if (savedPin) {
+        setHasPin(true);
+      }
+    };
+    loadPin();
+  }, []);
+
+  const handleSavePin = async () => {
+    if (pin.length !== 6 || pinConfirm.length !== 6) {
+      Alert.alert('Erro', 'O PIN deve ter exatamente 6 dígitos.');
+      return;
+    }
+    if (pin !== pinConfirm) {
+      Alert.alert('Erro', 'Os dois PINs não conferem.');
+      return;
+    }
+    const ok = await storageService.saveConfigPin(pin);
+    if (ok) {
+      setHasPin(true);
+      setPin('');
+      setPinConfirm('');
+      Alert.alert('Sucesso', 'PIN de configuração salvo com sucesso.');
+    } else {
+      Alert.alert('Erro', 'Não foi possível salvar o PIN. Tente novamente.');
+    }
+  };
 
   // Rotina
   const [newRoutineTitle, setNewRoutineTitle] = useState('');
@@ -131,12 +167,11 @@ const ConfigScreen: React.FC = () => {
 
   // Remover com confirmação
   const confirmRemovePecs = (id: string) => {
-     console.log('Confirma remoção de:', id); // debug
-  Alert.alert('Remover', 'Remover este botão PECS?', [
-    { text: 'Cancelar', style: 'cancel' },
-    { text: 'Remover', style: 'destructive', onPress: () => removePecsButton(id) },
-  ]);
-};
+    Alert.alert('Remover', 'Remover este botão PECS?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Remover', style: 'destructive', onPress: () => removePecsButton(id) },
+    ]);
+  };
 
   const confirmRemoveRoutine = (id: string) => {
     Alert.alert('Remover', 'Remover esta atividade?', [
@@ -145,7 +180,6 @@ const ConfigScreen: React.FC = () => {
     ]);
   };
 
-  // Render simples das listas (evita nested VirtualizedLists)
   const renderRoutineList = () =>
     routine.map(item => (
       <View key={item.id} style={styles.listRow}>
@@ -168,34 +202,32 @@ const ConfigScreen: React.FC = () => {
     ));
 
   const renderPecsList = () =>
-  pecsButtons.map(item => (
-    <View key={item.id} style={styles.listRow}>
-      <Text style={styles.itemText}>
-        {item.text}
-        <Text style={styles.itemMeta}>
-          {' '}— {pecsCategories.find(c => c.id === item.categoryId)?.name || '—'}
+    pecsButtons.map(item => (
+      <View key={item.id} style={styles.listRow}>
+        <Text style={styles.itemText}>
+          {item.text}
+          <Text style={styles.itemMeta}>
+            {' '}— {pecsCategories.find(c => c.id === item.categoryId)?.name || '—'}
+          </Text>
         </Text>
-      </Text>
 
-      <TouchableOpacity
-        onPress={() => {
-          setEditPecsId(item.id);
-          setEditPecsText(item.text);
-          setEditPecsCategory(item.categoryId || DEFAULT_CATEGORY);
-        }}
-        style={styles.smallAction}
-      >
-        <Text style={styles.editButton}>Editar</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setEditPecsId(item.id);
+            setEditPecsText(item.text);
+            setEditPecsCategory(item.categoryId || DEFAULT_CATEGORY);
+          }}
+          style={styles.smallAction}
+        >
+          <Text style={styles.editButton}>Editar</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={() => confirmRemovePecs(item.id)}
-        style={styles.smallAction}
-      >
-        <Text style={styles.removeButton}>Remover</Text>
-      </TouchableOpacity>
-    </View>
-  ));
+        <TouchableOpacity onPress={() => confirmRemovePecs(item.id)} style={styles.smallAction}>
+          <Text style={styles.removeButton}>Remover</Text>
+        </TouchableOpacity>
+      </View>
+    ));
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
@@ -203,7 +235,6 @@ const ConfigScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
       >
-        {/* FlatList principal apenas para prover scroll; data vazio */}
         <FlatList
           data={[]}
           ListHeaderComponent={
@@ -232,6 +263,37 @@ const ConfigScreen: React.FC = () => {
                 returnKeyType="done"
               />
 
+              {/* PIN DE CONFIGURAÇÃO */}
+              <Text style={styles.label}>PIN de Configuração (6 dígitos)</Text>
+              <TextInput
+                style={styles.input}
+                value={pin}
+                onChangeText={setPin}
+                placeholder={hasPin ? 'Alterar PIN' : 'Criar PIN de 6 dígitos'}
+                placeholderTextColor={colors.disabled}
+                keyboardType="number-pad"
+                maxLength={6}
+                secureTextEntry
+              />
+
+              <Text style={styles.label}>Confirmar PIN</Text>
+              <TextInput
+                style={styles.input}
+                value={pinConfirm}
+                onChangeText={setPinConfirm}
+                placeholder="Repita o PIN"
+                placeholderTextColor={colors.disabled}
+                keyboardType="number-pad"
+                maxLength={6}
+                secureTextEntry
+              />
+
+              <View style={styles.rowButtons}>
+                <View style={styles.buttonWrapper}>
+                  <Button title="Salvar PIN" onPress={handleSavePin} color={colors.primary} />
+                </View>
+              </View>
+
               <View style={styles.rowButtons}>
                 <View style={styles.buttonWrapper}>
                   <Button title="Salvar Perfil" onPress={handleSaveProfile} color={colors.primary} />
@@ -240,7 +302,7 @@ const ConfigScreen: React.FC = () => {
 
               <View style={styles.divider} />
 
-              {/* ROTINA */}
+              {/* Rotina */}
               <Text style={styles.header}>Editar Rotina</Text>
 
               <TextInput
@@ -341,11 +403,9 @@ const ConfigScreen: React.FC = () => {
                 )}
               </View>
 
-              {/* Espaço final para scroll confortável */}
               <View style={{ height: 36 }} />
             </View>
           }
-          // FlatList technical props to avoid warnings
           keyExtractor={() => 'k'}
           renderItem={null}
           showsVerticalScrollIndicator={false}

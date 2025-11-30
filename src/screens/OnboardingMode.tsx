@@ -6,49 +6,42 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  // REFAKTOR: Alert removido
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../navigation/AppNavigator';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 
-type Props = NativeStackScreenProps<AppStackParamList, 'OnboardingMode'>;
-
-const OnboardingModeScreen: React.FC<Props> = ({ navigation }) => {
-  // Trava para o modo cuidador
-  const handleCaregiverLongPress = () => {
-    // REFAKTOR: Trocado Alert.alert por alert() para web
-    alert('Acesso do Cuidador: Configurações desbloqueadas.');
-    navigation.navigate('Config');
-  };
+const OnboardingModeScreen: React.FC = () => {
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>Projeto Aurora</Text>
-        
+
         {/* Botão Modo Criança */}
         <TouchableOpacity
           style={[styles.button, styles.childButton]}
-          onPress={() => navigation.navigate('ChildHome')}
+          onPress={() => navigation.navigate('ChildHome' as never)}
           accessible={true}
           accessibilityLabel="Entrar no Modo Criança"
         >
-          <MaterialCommunityIcons name="account-child-circle" size={80} color={colors.white} />
+          <MaterialCommunityIcons
+            name="account-child-circle"
+            size={80}
+            color={colors.white}
+          />
           <Text style={styles.buttonText}>Entrar</Text>
           <Text style={styles.buttonSubtext}>(Modo Criança)</Text>
         </TouchableOpacity>
 
-        {/* Botão Modo Cuidador (com trava) */}
+        {/* Botão Modo Cuidador -> Tela de PIN */}
         <TouchableOpacity
           style={[styles.button, styles.caregiverButton]}
-          onLongPress={handleCaregiverLongPress}
-          // REFAKTOR: Trocado Alert.alert por alert() para web
-          onPress={() => alert('Acesso Restrito: Segure o botão por 3 segundos para configurar.')}
+          onPress={() => navigation.navigate('ConfigPin' as never)}
           accessible={true}
-          accessibilityLabel="Configurar (Modo Cuidador). Segure por 3 segundos para ativar."
+          accessibilityLabel="Configurar (Modo Cuidador). Digite o PIN para acessar."
         >
           <MaterialCommunityIcons name="cog" size={60} color={colors.text} />
           <Text style={styles.buttonTextCaregiver}>Configurar</Text>

@@ -1,17 +1,19 @@
 // src/screens/ChildHome.tsx
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppStackParamList } from '../navigation/AppNavigator';
+import { useNavigation } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 import BigCard from '../components/BigCard';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 
-type Props = NativeStackScreenProps<AppStackParamList, 'ChildHome'>;
-
-const ChildHomeScreen: React.FC<Props> = ({ navigation }) => {
+const ChildHomeScreen: React.FC = () => {
   const { user } = useAppContext();
+  const navigation = useNavigation();
+
+  const handleOpenConfig = () => {
+    navigation.navigate('ConfigPin' as never);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -23,22 +25,29 @@ const ChildHomeScreen: React.FC<Props> = ({ navigation }) => {
           <BigCard
             iconName="calendar-check-outline"
             title="Minha Rotina"
-            onPress={() => navigation.navigate('MyRoutine')}
+            onPress={() => navigation.navigate('MyRoutine' as never)}
             accessibilityLabel="Abrir Minha Rotina"
           />
           <BigCard
             iconName="comment-processing-outline"
             title="Quero Dizer"
             style={{ backgroundColor: colors.secondary }}
-            onPress={() => navigation.navigate('WantToSay')}
+            onPress={() => navigation.navigate('WantToSay' as never)}
             accessibilityLabel="Abrir Quero Dizer"
           />
           <BigCard
             iconName="heart-pulse"
             title="Estou Sentindo"
             style={{ backgroundColor: colors.accent }}
-            onPress={() => navigation.navigate('HowIFeel')}
+            onPress={() => navigation.navigate('HowIFeel' as never)}
             accessibilityLabel="Abrir Estou Sentindo"
+          />
+          <BigCard
+            iconName="cog-outline"
+            title="Configuração"
+            style={{ backgroundColor: colors.disabled }}
+            onPress={handleOpenConfig}
+            accessibilityLabel="Abrir Configuração do Cuidador"
           />
         </View>
       </View>
