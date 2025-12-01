@@ -58,6 +58,7 @@ Endpoints públicos:
 * `POST /api/auth/register`
 * `POST /api/auth/login`
 * `POST /api/chatgpt/**`
+* `/swagger-ui/index.html#/`
 * `/swagger-ui/**`
 * `/v3/api-docs/**`
 
