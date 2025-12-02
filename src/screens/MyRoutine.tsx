@@ -1,5 +1,5 @@
 // src/screens/MyRoutine.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,12 @@ import IconButton from '../components/IconButton';
 const MyRoutineScreen = () => {
   const { routine, toggleRoutineItem } = useAppContext();
 
+  // REFAKTOR: Ordenação automática por horário (Crescente)
+  // Isso garante que a manhã apareça antes da tarde, independente da ordem de cadastro.
+  const sortedRoutine = useMemo(() => {
+    return [...routine].sort((a, b) => a.time.localeCompare(b.time));
+  }, [routine]);
+
   const handleToggle = (id: string) => {
     toggleRoutineItem(id);
   };
@@ -31,36 +37,47 @@ const MyRoutineScreen = () => {
         accessible={true}
         accessibilityLabel={accessibilityLabel}
       >
-        <MaterialCommunityIcons
-          name={item.icon as any}
-          size={48}
-          color={item.completed ? colors.success : colors.primary}
-        />
+        {/* Ícone Lateral */}
+        <View style={styles.iconContainer}>
+            <MaterialCommunityIcons
+            name={item.icon as any || 'calendar-check'} // Fallback se não tiver ícone
+            size={40}
+            color={item.completed ? colors.success : colors.primary}
+            />
+        </View>
+
         <View style={styles.textContainer}>
-          {/*
-            REFAKTOR: Esta é a nova informação de CONTEXTO
-            Só aparece se 'item.category' existir nos seus dados
-          */}
-          {item.category && (
+          {/* Categoria (Contexto) */}
+          {item.category ? (
             <Text style={[styles.category, item.completed && styles.textCompletedOpacity]}>
               {item.category.toUpperCase()}
             </Text>
-          )}
+          ) : null}
 
+          {/* Título da Atividade */}
           <Text style={[styles.title, item.completed && styles.textCompleted]}>
             {item.title}
           </Text>
-          <Text style={[styles.time, item.completed && styles.textCompleted]}>
-            {item.time}
-          </Text>
+
+          {/* Horário (Destaque sutil) */}
+          <View style={styles.timeContainer}>
+            <MaterialCommunityIcons name="clock-outline" size={14} color={item.completed ? colors.disabled : colors.text} />
+            <Text style={[styles.time, item.completed && styles.textCompleted]}>
+                {' '}{item.time}
+            </Text>
+          </View>
         </View>
+
+        {/* Botão de Check */}
         <IconButton
           iconName={item.completed ? 'check-circle' : 'checkbox-blank-circle-outline'}
-          size={40}
+          size={44} // Um pouco maior para facilitar o toque
           color={item.completed ? colors.success : colors.disabled}
           onPress={() => handleToggle(item.id)}
           accessibilityLabel={item.completed ? 'Desmarcar tarefa' : 'Completar tarefa'}
         />
+
+        {/* Estrela de Recompensa */}
         {item.completed && (
           <MaterialCommunityIcons
             name="star"
@@ -73,16 +90,26 @@ const MyRoutineScreen = () => {
     );
   };
 
+  // Estado Vazio (Reforço Positivo)
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+        <MaterialCommunityIcons name="emoticon-happy-outline" size={80} color={colors.disabled} />
+        <Text style={styles.emptyText}>Tudo pronto por hoje!</Text>
+        <Text style={styles.emptySubText}>Aproveite seu tempo livre.</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={routine}
+        data={sortedRoutine} // Usando a lista ordenada
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         style={styles.listContainer}
-        // @ts-ignore (Mantendo o ignore para o bug de cache)
-        contentContainerStyle={styles.listContent}
+        // @ts-ignore
+        contentContainerStyle={sortedRoutine.length === 0 ? styles.centerContent : styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={renderEmpty}
       />
     </View>
   );
@@ -97,69 +124,105 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   listContent: {
-    // REFAKTOR: Cards com 100% de largura
-    // Removido 'maxWidth' e 'alignSelf'
     width: '100%',
     padding: 20,
     paddingBottom: 40,
   },
+  centerContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   card: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 20, // Mais arredondado
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
     elevation: 3,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   cardCompleted: {
-    backgroundColor: '#F0FFF0',
-    opacity: 0.7,
+    backgroundColor: '#F4F9F4', // Verde muito suave
+    opacity: 0.8,
+    borderColor: '#E0E0E0',
+    elevation: 0,
+  },
+  iconContainer: {
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
   },
   textContainer: {
     flex: 1,
-    marginLeft: 16,
+    justifyContent: 'center',
   },
-  // REFAKTOR: Novo estilo para a Categoria
   category: {
-    ...typography.caption, // Usa um estilo de fonte menor
-    color: colors.primary,
-    fontWeight: '700',
-    marginBottom: 4,
-    opacity: 0.9,
-    fontSize: 14,
+    ...typography.caption,
+    color: colors.accent,
+    fontWeight: '800',
+    marginBottom: 2,
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   title: {
     ...typography.subtitle,
     color: colors.text,
-    fontSize: 22,
+    fontSize: 20, // Tamanho legível
+    marginBottom: 4,
   },
-  textCompleted: {
-    textDecorationLine: 'line-through',
-    color: colors.disabled,
-  },
-  // REFAKTOR: Estilo separado para a opacidade da categoria
-  textCompletedOpacity: {
-     color: colors.disabled,
-     opacity: 0.7,
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   time: {
     ...typography.body,
     color: colors.text,
     opacity: 0.7,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  textCompleted: {
+    textDecorationLine: 'line-through',
+    color: colors.disabled,
+  },
+  textCompletedOpacity: {
+     color: colors.disabled,
+     opacity: 0.6,
   },
   separator: {
-    height: 16, // Espaçamento vertical entre os cards
+    height: 16,
   },
   star: {
     position: 'absolute',
-    top: -10,
-    right: -10,
+    top: 10,
+    right: 50, // Posicionado perto do check
     transform: [{ rotate: '15deg' }],
+    opacity: 0.8,
+  },
+  // Empty State Styles
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    ...typography.subtitle,
+    color: colors.disabled,
+    marginTop: 20,
+    fontSize: 20,
+  },
+  emptySubText: {
+    ...typography.body,
+    color: colors.disabled,
+    marginTop: 8,
   },
 });
 

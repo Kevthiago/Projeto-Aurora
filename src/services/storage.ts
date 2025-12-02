@@ -1,6 +1,6 @@
 // src/services/storage.ts
 
-import AsyncStorage from '@react-native-async-storage/async-storage'; // precisa estar instalado [web:22]
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, RoutineItem, PECSCategory, PECSButton } from '../data/types';
 
 export const storageService = {
@@ -11,7 +11,8 @@ export const storageService = {
     try {
       await AsyncStorage.setItem('user', JSON.stringify(user));
       return true;
-    } catch {
+    } catch (e) {
+      console.error('[Storage] Erro ao salvar user:', e);
       return false;
     }
   },
@@ -20,7 +21,8 @@ export const storageService = {
     try {
       const data = await AsyncStorage.getItem('user');
       return data ? JSON.parse(data) as User : null;
-    } catch {
+    } catch (e) {
+      console.error('[Storage] Erro ao carregar user:', e);
       return null;
     }
   },
@@ -32,7 +34,8 @@ export const storageService = {
     try {
       await AsyncStorage.setItem('routine', JSON.stringify(routine));
       return true;
-    } catch {
+    } catch (e) {
+      console.error('[Storage] Erro ao salvar rotina:', e);
       return false;
     }
   },
@@ -41,7 +44,7 @@ export const storageService = {
     try {
       const data = await AsyncStorage.getItem('routine');
       return data ? JSON.parse(data) as RoutineItem[] : [];
-    } catch {
+    } catch (e) {
       return [];
     }
   },
@@ -53,7 +56,8 @@ export const storageService = {
     try {
       await AsyncStorage.setItem('pecsCategories', JSON.stringify(categories));
       return true;
-    } catch {
+    } catch (e) {
+      console.error('[Storage] Erro ao salvar categorias:', e);
       return false;
     }
   },
@@ -62,7 +66,7 @@ export const storageService = {
     try {
       const data = await AsyncStorage.getItem('pecsCategories');
       return data ? JSON.parse(data) as PECSCategory[] : [];
-    } catch {
+    } catch (e) {
       return [];
     }
   },
@@ -74,7 +78,8 @@ export const storageService = {
     try {
       await AsyncStorage.setItem('pecsButtons', JSON.stringify(buttons));
       return true;
-    } catch {
+    } catch (e) {
+      console.error('[Storage] Erro ao salvar botões:', e);
       return false;
     }
   },
@@ -83,7 +88,7 @@ export const storageService = {
     try {
       const data = await AsyncStorage.getItem('pecsButtons');
       return data ? JSON.parse(data) as PECSButton[] : [];
-    } catch {
+    } catch (e) {
       return [];
     }
   },
@@ -95,7 +100,8 @@ export const storageService = {
     try {
       await AsyncStorage.setItem('configPin', pin);
       return true;
-    } catch {
+    } catch (e) {
+      console.error('[Storage] Erro ao salvar PIN:', e);
       return false;
     }
   },
@@ -104,7 +110,7 @@ export const storageService = {
     try {
       const pin = await AsyncStorage.getItem('configPin');
       return pin ?? null;
-    } catch {
+    } catch (e) {
       return null;
     }
   },

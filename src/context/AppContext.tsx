@@ -1,3 +1,4 @@
+// src/context/AppContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   MOCK_USER,
@@ -30,7 +31,11 @@ interface AppContextType {
   removePecsButton: (id: string) => void;
 
   speak: (text: string) => void;
+  
+  // Mantemos o nome específico
   notifyCaregiverWhatsApp: (msg: string) => void;
+  // ADICIONADO: Mantemos o nome genérico para compatibilidade com as telas
+  notifyCaregiver: (msg: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,40 +47,37 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   const [pecsCategories, setPecsCategories] = useState<PECSCategory[]>([]);
   const [pecsButtons, setPecsButtons] = useState<PECSButton[]>([]);
 
-  // ==========================================================
-  // 🔄 CORREÇÃO: Carregamento com fallback REAL (sem bug do [])
-  // ==========================================================
+  // CARREGAMENTO
   useEffect(() => {
-  const loadAll = async () => {
-    const u = await storageService.loadUser();
-    const r = await storageService.loadRoutine();
-    const c = await storageService.loadPecsCategories();
-    const b = await storageService.loadPecsButtons();
+    const loadAll = async () => {
+      try {
+        const u = await storageService.loadUser();
+        const r = await storageService.loadRoutine();
+        const c = await storageService.loadPecsCategories();
+        const b = await storageService.loadPecsButtons();
 
-    setUser(u ?? MOCK_USER);
-    setRoutine(r.length > 0 ? r : MOCK_ROUTINE);
-    setPecsCategories(c.length > 0 ? c : MOCK_PECS_CATEGORIES);
-    setPecsButtons(b.length > 0 ? b : MOCK_PECS_BUTTONS);
-  };
+        setUser(u ?? MOCK_USER);
+        setRoutine(r && r.length > 0 ? r : MOCK_ROUTINE);
+        setPecsCategories(c && c.length > 0 ? c : MOCK_PECS_CATEGORIES);
+        setPecsButtons(b && b.length > 0 ? b : MOCK_PECS_BUTTONS);
+      } catch (e) {
+        console.error("Erro ao carregar dados", e);
+      }
+    };
+    loadAll();
+  }, []);
 
-  loadAll();
-}, []);
-
-  // ==========================================================
   // USER
-  // ==========================================================
   const updateUser = (name: string, phone: string) => {
-    if (!user) return;
-
-    const updated: User = { ...user, name, phone };
+    // Garante que o objeto user exista
+    const baseUser = user || MOCK_USER; 
+    const updated: User = { ...baseUser, name, phone };
     setUser(updated);
     storageService.saveUser(updated);
-    alert("Informações atualizadas!");
+    if(Platform.OS === 'web') alert("Informações atualizadas!");
   };
 
-  // ==========================================================
   // ROTINA
-  // ==========================================================
   const addRoutineItem = (item: RoutineItem) => {
     setRoutine(prev => {
       const updated = [...prev, item];
@@ -110,9 +112,7 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
     });
   };
 
-  // ==========================================================
-  // CATEGORIAS PECS
-  // ==========================================================
+  // PECS
   const addPecsCategory = (cat: PECSCategory) => {
     setPecsCategories(prev => {
       const updated = [...prev, cat];
@@ -121,16 +121,13 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
     });
   };
 
-  // ==========================================================
-  // BOTÕES PECS
-  // ==========================================================
- const addPecsButton = (btn: PECSButton) => {
-  setPecsButtons(prev => {
-    const updated = [...prev, btn];
-    storageService.savePecsButtons(updated); // Salva automaticamente
-    return updated;
-  });
-};
+  const addPecsButton = (btn: PECSButton) => {
+    setPecsButtons(prev => {
+      const updated = [...prev, btn];
+      storageService.savePecsButtons(updated);
+      return updated;
+    });
+  };
 
   const editPecsButton = (id: string, changes: Partial<PECSButton>) => {
     setPecsButtons(prev => {
@@ -141,28 +138,21 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   };
 
   const removePecsButton = (id: string) => {
-      console.log('Remover PECS:', id); // debug do id recebido
-  setPecsButtons(prev => {
-    const updated = prev.filter(b => b.id !== id);
-    console.log('Botões PECS após remoção:', updated); // debug do array atualizado
-    storageService.savePecsButtons(updated);
-    return updated;
-  });
-};
+    setPecsButtons(prev => {
+      const updated = prev.filter(b => b.id !== id);
+      storageService.savePecsButtons(updated);
+      return updated;
+    });
+  };
 
-  // ==========================================================
-  // TALK
-  // ==========================================================
   const speak = (text: string) => {
     ttsService.speak(text);
   };
 
-  // ==========================================================
   // WHATSAPP
-  // ==========================================================
   const notifyCaregiverWhatsApp = (msg: string) => {
     if (!user?.phone) {
-      alert("Nenhum telefone de cuidador registrado!");
+      alert("Nenhum telefone de cuidador registrado! Vá em Configurações.");
       return;
     }
 
@@ -183,21 +173,19 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
         routine,
         pecsCategories,
         pecsButtons,
-
         updateUser,
-
         addRoutineItem,
         editRoutineItem,
         removeRoutineItem,
         toggleRoutineItem,
-
         addPecsCategory,
         addPecsButton,
         editPecsButton,
         removePecsButton,
-
         speak,
-        notifyCaregiverWhatsApp
+        notifyCaregiverWhatsApp,
+        // Compatibilidade: aponta para a mesma função do WhatsApp
+        notifyCaregiver: notifyCaregiverWhatsApp 
       }}
     >
       {children}
@@ -205,9 +193,6 @@ export const AppProvider = ({ children }: { children?: React.ReactNode }) => {
   );
 };
 
-// ==========================================================
-// HOOK
-// ==========================================================
 export const useAppContext = () => {
   const ctx = useContext(AppContext);
   if (!ctx) {

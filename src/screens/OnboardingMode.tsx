@@ -5,8 +5,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+// REFAKTOR: Usando a SafeAreaView correta para evitar cortes em celulares modernos
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { colors } from '../theme/colors';
@@ -24,6 +25,7 @@ const OnboardingModeScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.button, styles.childButton]}
           onPress={() => navigation.navigate('ChildHome' as never)}
+          activeOpacity={0.8}
           accessible={true}
           accessibilityLabel="Entrar no Modo Criança"
         >
@@ -36,10 +38,13 @@ const OnboardingModeScreen: React.FC = () => {
           <Text style={styles.buttonSubtext}>(Modo Criança)</Text>
         </TouchableOpacity>
 
-        {/* Botão Modo Cuidador -> Tela de PIN */}
+        {/* Botão Modo Cuidador */}
         <TouchableOpacity
           style={[styles.button, styles.caregiverButton]}
-          onPress={() => navigation.navigate('ConfigPin' as never)}
+          // REFAKTOR: AQUI ESTAVA O ERRO.
+          // Navegamos para 'Config'. A tela ConfigScreen verificará o PIN internamente.
+          onPress={() => navigation.navigate('Config' as never)}
+          activeOpacity={0.8}
           accessible={true}
           accessibilityLabel="Configurar (Modo Cuidador). Digite o PIN para acessar."
         >
@@ -67,6 +72,7 @@ const styles = StyleSheet.create({
     ...typography.display,
     color: colors.primary,
     marginBottom: 60,
+    textAlign: 'center', // Garante centralização em telas menores
   },
   button: {
     width: '90%',
@@ -89,7 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderColor: colors.accent,
     borderWidth: 2,
-    height: 150,
+    height: 150, // Hierarquia visual: botão do cuidador um pouco menor
   },
   buttonText: {
     ...typography.title,

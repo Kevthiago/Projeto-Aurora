@@ -1,6 +1,7 @@
-// src/screens/ChildHome.tsx
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+// REFAKTOR: Usando a SafeAreaView correta
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 import BigCard from '../components/BigCard';
@@ -10,10 +11,6 @@ import { typography } from '../theme/typography';
 const ChildHomeScreen: React.FC = () => {
   const { user } = useAppContext();
   const navigation = useNavigation();
-
-  const handleOpenConfig = () => {
-    navigation.navigate('ConfigPin' as never);
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -42,13 +39,6 @@ const ChildHomeScreen: React.FC = () => {
             onPress={() => navigation.navigate('HowIFeel' as never)}
             accessibilityLabel="Abrir Estou Sentindo"
           />
-          <BigCard
-            iconName="cog-outline"
-            title="Configuração"
-            style={{ backgroundColor: colors.disabled }}
-            onPress={handleOpenConfig}
-            accessibilityLabel="Abrir Configuração do Cuidador"
-          />
         </View>
       </View>
     </SafeAreaView>
@@ -64,11 +54,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     alignItems: 'center',
+    justifyContent: 'center', // REFAKTOR: Centraliza verticalmente o conteúdo
   },
   greeting: {
     ...typography.display,
     color: colors.text,
-    marginTop: 40,
+    marginBottom: 8,
     fontWeight: '700',
     textAlign: 'center',
   },

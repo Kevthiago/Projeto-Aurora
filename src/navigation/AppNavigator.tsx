@@ -13,7 +13,6 @@ import ChildHomeScreen from '../screens/ChildHome';
 import MyRoutineScreen from '../screens/MyRoutine';
 import WantToSayScreen from '../screens/WantToSay';
 import HowIFeelScreen from '../screens/HowIFeel';
-import ConfigPinScreen from '../screens/ConfigPinScreen';
 
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -55,12 +54,6 @@ const AppNavigator: React.FC = () => {
           name="OnboardingMode"
           component={OnboardingModeScreen}
           options={{ headerShown: false }}
-        />
-
-        <Stack.Screen
-          name="ConfigPin"
-          component={ConfigPinScreen}
-          options={{ title: 'PIN de Configuração' }}
         />
 
         <Stack.Screen

@@ -13,6 +13,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAppContext } from '../context/AppContext';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -34,7 +36,41 @@ const ConfigScreen: React.FC = () => {
     removePecsButton,
   } = useAppContext();
 
-  // Categorias
+  // --- ESTADOS DE SEGURANÇA ---
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(true);
+  const [storedPin, setStoredPin] = useState<string | null>(null);
+  const [unlockInput, setUnlockInput] = useState('');
+  
+  // Controle para exibir/esconder a área de TROCAR SENHA
+  const [showChangePin, setShowChangePin] = useState(false);
+
+  useEffect(() => {
+    const checkSecurity = async () => {
+      const pin = await storageService.loadConfigPin();
+      setStoredPin(pin);
+      if (pin) {
+        setIsLocked(true);
+      } else {
+        setIsLocked(false);
+      }
+      setIsLoading(false);
+    };
+    checkSecurity();
+  }, []);
+
+  const handleUnlock = () => {
+    if (unlockInput === storedPin) {
+      setIsLocked(false);
+      setUnlockInput('');
+    } else {
+      if (Platform.OS === 'web') alert('Senha incorreta');
+      else Alert.alert('Acesso Negado', 'PIN incorreto.');
+      setUnlockInput('');
+    }
+  };
+
+  // --- DADOS DO FORMULÁRIO ---
   const pecsCategories = useMemo(
     () => [
       { id: 'c1', name: 'Sentimentos' },
@@ -46,64 +82,95 @@ const ConfigScreen: React.FC = () => {
     []
   );
 
-  // Perfil
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  
+  const [newPin, setNewPin] = useState('');
+  const [newPinConfirm, setNewPinConfirm] = useState('');
 
-  // PIN de configuração
-  const [pin, setPin] = useState('');
-  const [pinConfirm, setPinConfirm] = useState('');
-  const [hasPin, setHasPin] = useState(false);
-
-  useEffect(() => {
-    const loadPin = async () => {
-      const savedPin = await storageService.loadConfigPin();
-      if (savedPin) {
-        setHasPin(true);
-      }
-    };
-    loadPin();
-  }, []);
-
-  const handleSavePin = async () => {
-    if (pin.length !== 6 || pinConfirm.length !== 6) {
-      Alert.alert('Erro', 'O PIN deve ter exatamente 6 dígitos.');
-      return;
-    }
-    if (pin !== pinConfirm) {
-      Alert.alert('Erro', 'Os dois PINs não conferem.');
-      return;
-    }
-    const ok = await storageService.saveConfigPin(pin);
-    if (ok) {
-      setHasPin(true);
-      setPin('');
-      setPinConfirm('');
-      Alert.alert('Sucesso', 'PIN de configuração salvo com sucesso.');
-    } else {
-      Alert.alert('Erro', 'Não foi possível salvar o PIN. Tente novamente.');
-    }
-  };
-
-  // Rotina
+  // --- ROTINA ---
   const [newRoutineTitle, setNewRoutineTitle] = useState('');
+  const [newRoutineTime, setNewRoutineTime] = useState(''); // <--- NOVO
   const [editRoutineId, setEditRoutineId] = useState<string | null>(null);
   const [editRoutineTitle, setEditRoutineTitle] = useState('');
+  const [editRoutineTime, setEditRoutineTime] = useState(''); // <--- NOVO
 
-  // PECS
   const [newPecsText, setNewPecsText] = useState('');
   const [editPecsId, setEditPecsId] = useState<string | null>(null);
   const [editPecsText, setEditPecsText] = useState('');
   const [newPecsCategory, setNewPecsCategory] = useState<string>(DEFAULT_CATEGORY);
   const [editPecsCategory, setEditPecsCategory] = useState<string>(DEFAULT_CATEGORY);
 
-  // Helpers UX
-  const clearRoutineForm = () => {
-    setNewRoutineTitle('');
-    setEditRoutineId(null);
-    setEditRoutineTitle('');
+  // --- TIME PICKER ---
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [pickerDate, setPickerDate] = useState(new Date());
+  const [isEditingTime, setIsEditingTime] = useState(false);
+
+  const stringToDate = (timeString: string) => {
+    const d = new Date();
+    if (!timeString) return d;
+    const [hours, minutes] = timeString.split(':').map(Number);
+    d.setHours(hours || 0); d.setMinutes(minutes || 0);
+    return d;
   };
 
+  const openTimePicker = (isEdit: boolean) => {
+    const currentTimeString = isEdit ? editRoutineTime : newRoutineTime;
+    setPickerDate(stringToDate(currentTimeString));
+    setIsEditingTime(isEdit);
+    setShowTimePicker(true);
+  };
+
+  const onTimeChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (selectedDate) {
+      const hours = selectedDate.getHours().toString().padStart(2, '0');
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+      const timeString = `${hours}:${minutes}`;
+      isEditingTime ? setEditRoutineTime(timeString) : setNewRoutineTime(timeString);
+    }
+  };
+
+  // --- AÇÕES ---
+  const handleSavePin = async () => {
+    if (newPin.length !== 6 || newPinConfirm.length !== 6) {
+      alert('O PIN deve ter 6 dígitos.');
+      return;
+    }
+    if (newPin !== newPinConfirm) {
+      alert('Os PINs não conferem.');
+      return;
+    }
+    const ok = await storageService.saveConfigPin(newPin);
+    if (ok) {
+      setStoredPin(newPin);
+      setNewPin('');
+      setNewPinConfirm('');
+      setShowChangePin(false); // Esconde o formulário após salvar
+      alert('Novo PIN salvo com sucesso.');
+    } else {
+      alert('Erro ao salvar PIN.');
+    }
+  };
+
+  const handleSaveProfile = () => {
+    if (!name.trim()) {
+      alert('Informe o nome da criança.');
+      return;
+    }
+    updateUser(name.trim(), phone.trim());
+    if (Platform.OS === 'web') alert('Perfil salvo!');
+    else Alert.alert('Sucesso', 'Perfil salvo.');
+  };
+
+  // ... (Helpers de limpar form mantidos igual)
+  const clearRoutineForm = () => {
+    setNewRoutineTitle('');
+    setNewRoutineTime(''); // <--- NOVO
+    setEditRoutineId(null);
+    setEditRoutineTitle('');
+    setEditRoutineTime(''); // <--- NOVO
+  };
   const clearPecsForm = () => {
     setNewPecsText('');
     setNewPecsCategory(DEFAULT_CATEGORY);
@@ -112,122 +179,129 @@ const ConfigScreen: React.FC = () => {
     setEditPecsCategory(DEFAULT_CATEGORY);
   };
 
-  // Perfil
-  const handleSaveProfile = () => {
-    if (!name.trim()) {
-      Alert.alert('Validação', 'Informe o nome da criança.');
-      return;
-    }
-    updateUser(name.trim(), phone.trim());
-    Alert.alert('Sucesso', 'Perfil atualizado.');
-  };
-
-  // Rotina
+  // ... (Handlers de Rotina e PECS mantidos igual, omitindo para brevidade pois funcionam)
+  // --- HANDLERS ROTINA ---
   const handleAddRoutine = () => {
-    if (!newRoutineTitle.trim()) return;
-    addRoutineItem({
+    if (!newRoutineTitle.trim()) {
+        alert("Digite o nome da atividade");
+        return;
+    }
+    // Se não digitar hora, usa 08:00 como padrão
+    const time = newRoutineTime.trim() || '08:00'; 
+
+    addRoutineItem && addRoutineItem({
       id: Date.now().toString(),
       title: newRoutineTitle.trim(),
-      time: '09:00',
+      time: time, // <--- USA O TIME
       icon: 'calendar',
       completed: false,
       category: '',
     });
-    setNewRoutineTitle('');
-  };
-
-  const handleEditRoutine = () => {
-    if (!editRoutineId || !editRoutineTitle.trim()) return;
-    editRoutineItem(editRoutineId, { title: editRoutineTitle.trim() });
     clearRoutineForm();
   };
 
-  // PECS
-  const handleAddPecs = () => {
-    if (!newPecsText.trim()) return;
-    addPecsButton({
-      id: Date.now().toString(),
-      categoryId: newPecsCategory,
-      text: newPecsText.trim(),
-      icon: 'star',
-      audioText: newPecsText.trim(),
-      notifyWhatsApp: true,
+  const handleEditRoutine = () => {
+    if (!editRoutineId) return;
+    const time = editRoutineTime.trim() || '08:00';
+    
+    editRoutineItem && editRoutineItem(editRoutineId, { 
+        title: editRoutineTitle.trim(),
+        time: time // <--- USA O TIME
     });
-    clearPecsForm();
+    clearRoutineForm();
   };
-
-  const handleEditPecs = () => {
-    if (!editPecsId || !editPecsText.trim()) return;
-    editPecsButton(editPecsId, {
-      text: editPecsText.trim(),
-      categoryId: editPecsCategory,
-    });
-    clearPecsForm();
-  };
-
-  // Remover com confirmação
-  const confirmRemovePecs = (id: string) => {
-    Alert.alert('Remover', 'Remover este botão PECS?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: () => removePecsButton(id) },
-    ]);
-  };
-
   const confirmRemoveRoutine = (id: string) => {
-    Alert.alert('Remover', 'Remover esta atividade?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: () => removeRoutineItem(id) },
-    ]);
+    if(Platform.OS === 'web') { if(confirm('Remover?')) removeRoutineItem(id); }
+    else Alert.alert('Remover', 'Confirmar?', [{text:'Cancelar'}, {text:'Sim', onPress:()=>removeRoutineItem(id)}]);
+  };
+  const handleAddPecs = () => {
+    if(!newPecsText.trim()) return;
+    addPecsButton && addPecsButton({ id: Date.now().toString(), categoryId: newPecsCategory, text: newPecsText.trim(), icon: 'star', audioText: newPecsText.trim(), notifyWhatsApp: true });
+    clearPecsForm();
+  };
+  const handleEditPecs = () => {
+    if(!editPecsId) return;
+    editPecsButton && editPecsButton(editPecsId, { text: editPecsText.trim(), categoryId: editPecsCategory });
+    clearPecsForm();
+  };
+  const confirmRemovePecs = (id: string) => {
+    if(Platform.OS === 'web') { if(confirm('Remover?')) removePecsButton(id); }
+    else Alert.alert('Remover', 'Confirmar?', [{text:'Cancelar'}, {text:'Sim', onPress:()=>removePecsButton(id)}]);
   };
 
-  const renderRoutineList = () =>
-    routine.map(item => (
-      <View key={item.id} style={styles.listRow}>
-        <Text style={styles.itemText}>{item.title}</Text>
 
+  // --- RENDERS ---
+  // --- ORDERNAR POR HORÁRIO ---
+  const sortedRoutine = useMemo(() => {
+    // Cria uma cópia da rotina [...] para não afetar o original
+    // e ordena comparando a string de tempo (a.time vs b.time)
+    return [...routine].sort((a, b) => a.time.localeCompare(b.time));
+  }, [routine]);
+  const renderRoutineList = () =>
+    // REFAKTOR: Mudamos de 'routine.map' para 'sortedRoutine.map'
+    sortedRoutine.map(item => (
+      <View key={item.id} style={styles.listRow}>
+        <View style={{flex: 1}}>
+            <Text style={styles.itemTime}>{item.time}</Text>
+            <Text style={styles.itemText}>{item.title}</Text>
+        </View>
+        
         <TouchableOpacity
           onPress={() => {
             setEditRoutineId(item.id);
             setEditRoutineTitle(item.title);
+            setEditRoutineTime(item.time);
           }}
           style={styles.smallAction}
         >
           <Text style={styles.editButton}>Editar</Text>
         </TouchableOpacity>
-
         <TouchableOpacity onPress={() => confirmRemoveRoutine(item.id)} style={styles.smallAction}>
           <Text style={styles.removeButton}>Remover</Text>
         </TouchableOpacity>
       </View>
     ));
 
-  const renderPecsList = () =>
-    pecsButtons.map(item => (
-      <View key={item.id} style={styles.listRow}>
-        <Text style={styles.itemText}>
-          {item.text}
-          <Text style={styles.itemMeta}>
-            {' '}— {pecsCategories.find(c => c.id === item.categoryId)?.name || '—'}
-          </Text>
-        </Text>
+  const renderPecsList = () => pecsButtons.map(item => (
+    <View key={item.id} style={styles.listRow}>
+      <Text style={styles.itemText}>{item.text} <Text style={styles.itemMeta}>— {pecsCategories.find(c => c.id === item.categoryId)?.name}</Text></Text>
+      <TouchableOpacity onPress={() => { setEditPecsId(item.id); setEditPecsText(item.text); setEditPecsCategory(item.categoryId || DEFAULT_CATEGORY); }} style={styles.smallAction}><Text style={styles.editButton}>Editar</Text></TouchableOpacity>
+      <TouchableOpacity onPress={() => confirmRemovePecs(item.id)} style={styles.smallAction}><Text style={styles.removeButton}>Remover</Text></TouchableOpacity>
+    </View>
+  ));
 
-        <TouchableOpacity
-          onPress={() => {
-            setEditPecsId(item.id);
-            setEditPecsText(item.text);
-            setEditPecsCategory(item.categoryId || DEFAULT_CATEGORY);
-          }}
-          style={styles.smallAction}
-        >
-          <Text style={styles.editButton}>Editar</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => confirmRemovePecs(item.id)} style={styles.smallAction}>
-          <Text style={styles.removeButton}>Remover</Text>
-        </TouchableOpacity>
-      </View>
-    ));
+  // 1. TELA DE CARREGAMENTO
+  if (isLoading) {
+    return <SafeAreaView style={styles.safeCenter}><Text>Carregando...</Text></SafeAreaView>;
+  }
 
+  // 2. TELA DE BLOQUEIO (LOCK SCREEN)
+  if (isLocked) {
+    return (
+      <SafeAreaView style={styles.safeCenter}>
+        <View style={styles.lockContainer}>
+          <MaterialCommunityIcons name="shield-lock" size={64} color={colors.primary} />
+          <Text style={styles.lockTitle}>Área do Cuidador</Text>
+          <Text style={styles.lockSubtitle}>Digite seu PIN para configurar</Text>
+          
+          <TextInput
+            style={styles.lockInput}
+            value={unlockInput}
+            onChangeText={setUnlockInput}
+            placeholder="PIN"
+            keyboardType="number-pad"
+            maxLength={6}
+            secureTextEntry
+            autoFocus
+          />
+          <Button title="Desbloquear" onPress={handleUnlock} color={colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 3. TELA DE CONFIGURAÇÃO (LIBERADA)
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
@@ -239,171 +313,120 @@ const ConfigScreen: React.FC = () => {
           data={[]}
           ListHeaderComponent={
             <View style={styles.content}>
-              {/* Perfil */}
-              <Text style={styles.header}>Perfil da Criança</Text>
+              <Text style={styles.screenTitle}>Configurações</Text>
 
-              <Text style={styles.label}>Nome</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Nome da Criança"
-                placeholderTextColor={colors.disabled}
-                returnKeyType="done"
-              />
-
-              <Text style={styles.label}>Telefone do cuidador</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="Ex: +5531999999999"
-                placeholderTextColor={colors.disabled}
-                keyboardType="phone-pad"
-                returnKeyType="done"
-              />
-
-              {/* PIN DE CONFIGURAÇÃO */}
-              <Text style={styles.label}>PIN de Configuração (6 dígitos)</Text>
-              <TextInput
-                style={styles.input}
-                value={pin}
-                onChangeText={setPin}
-                placeholder={hasPin ? 'Alterar PIN' : 'Criar PIN de 6 dígitos'}
-                placeholderTextColor={colors.disabled}
-                keyboardType="number-pad"
-                maxLength={6}
-                secureTextEntry
-              />
-
-              <Text style={styles.label}>Confirmar PIN</Text>
-              <TextInput
-                style={styles.input}
-                value={pinConfirm}
-                onChangeText={setPinConfirm}
-                placeholder="Repita o PIN"
-                placeholderTextColor={colors.disabled}
-                keyboardType="number-pad"
-                maxLength={6}
-                secureTextEntry
-              />
-
-              <View style={styles.rowButtons}>
-                <View style={styles.buttonWrapper}>
-                  <Button title="Salvar PIN" onPress={handleSavePin} color={colors.primary} />
-                </View>
+              {/* SEÇÃO SEGURANÇA (Colapsável) */}
+              <View style={styles.cardSection}>
+                <TouchableOpacity 
+                    style={styles.sectionHeaderClickable} 
+                    onPress={() => setShowChangePin(!showChangePin)}
+                >
+                    <Text style={styles.header}>Segurança e Acesso</Text>
+                    <MaterialCommunityIcons name={showChangePin ? "chevron-up" : "chevron-down"} size={24} color={colors.text} />
+                </TouchableOpacity>
+                
+                {showChangePin ? (
+                    <View style={{ marginTop: 10 }}>
+                        <Text style={styles.label}>{storedPin ? "Definir novo PIN" : "Criar PIN inicial"}</Text>
+                        <TextInput style={styles.input} value={newPin} onChangeText={setNewPin} placeholder="Novo PIN (6 dígitos)" keyboardType="number-pad" maxLength={6} secureTextEntry />
+                        <TextInput style={styles.input} value={newPinConfirm} onChangeText={setNewPinConfirm} placeholder="Confirme o PIN" keyboardType="number-pad" maxLength={6} secureTextEntry />
+                        <Button title="Salvar Novo PIN" onPress={handleSavePin} color={colors.primary} />
+                    </View>
+                ) : (
+                    <Text style={styles.helperText}>
+                        {storedPin ? "PIN cadastrado. Toque para alterar." : "Nenhum PIN cadastrado. Toque para proteger."}
+                    </Text>
+                )}
               </View>
 
-              <View style={styles.rowButtons}>
-                <View style={styles.buttonWrapper}>
+              {/* SEÇÃO PERFIL */}
+              <View style={styles.cardSection}>
+                  <Text style={styles.header}>Perfil</Text>
+                  <Text style={styles.label}>Nome da Criança</Text>
+                  <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nome" />
+                  <Text style={styles.label}>Telefone (WhatsApp)</Text>
+                  <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="+55..." keyboardType="phone-pad" />
                   <Button title="Salvar Perfil" onPress={handleSaveProfile} color={colors.primary} />
-                </View>
               </View>
 
-              <View style={styles.divider} />
+              {/* SEÇÃO ROTINA (COM HORÁRIO) */}
+              <View style={styles.cardSection}>
+                  <Text style={styles.header}>Atividades da Rotina</Text>
+                  
+                  {/* Inputs em linha para Horário e Nome */}
+                  <View style={styles.rowInputs}>
+                    <View style={{flex: 1, marginRight: 10}}>
+                        <Text style={styles.label}>Horário</Text>
+                        
+                        {/* --- CORREÇÃO: Botão clicável no lugar do TextInput manual --- */}
+                        <TouchableOpacity 
+                            style={styles.inputClickable} 
+                            onPress={() => openTimePicker(!!editRoutineId)}
+                        >
+                            <Text style={styles.inputText}>
+                                {(editRoutineId ? editRoutineTime : newRoutineTime) || "00:00"}
+                            </Text>
+                            <MaterialCommunityIcons name="clock-outline" size={20} color={colors.disabled} />
+                        </TouchableOpacity>
+                    </View>
 
-              {/* Rotina */}
-              <Text style={styles.header}>Editar Rotina</Text>
+                    <View style={{flex: 2}}>
+                        <Text style={styles.label}>Atividade</Text>
+                        <TextInput 
+                            style={styles.input} 
+                            value={editRoutineId ? editRoutineTitle : newRoutineTitle} 
+                            onChangeText={editRoutineId ? setEditRoutineTitle : setNewRoutineTitle} 
+                            placeholder="Nome da atividade" 
+                        />
+                    </View>
+                  </View>
 
-              <TextInput
-                style={styles.input}
-                value={editRoutineId ? editRoutineTitle : newRoutineTitle}
-                onChangeText={editRoutineId ? setEditRoutineTitle : setNewRoutineTitle}
-                placeholder={editRoutineId ? 'Editar atividade' : 'Nova atividade'}
-                placeholderTextColor={colors.disabled}
-                returnKeyType="done"
-              />
+                  {/* --- CORREÇÃO: O componente do relógio precisa estar aqui --- */}
+                  {showTimePicker && (
+                    <DateTimePicker
+                        value={pickerDate}
+                        mode="time"
+                        is24Hour={true}
+                        display="default"
+                        onChange={onTimeChange}
+                    />
+                  )}
 
-              <View style={styles.rowButtons}>
-                <View style={styles.buttonWrapper}>
-                  <Button
-                    title={editRoutineId ? 'Salvar Edição' : 'Adicionar Atividade'}
-                    onPress={editRoutineId ? handleEditRoutine : handleAddRoutine}
-                    color={colors.primary}
-                  />
-                </View>
-
-                {editRoutineId ? (
-                  <TouchableOpacity
-                    style={styles.ghostButton}
-                    onPress={() => clearRoutineForm()}
-                  >
-                    <Text style={styles.ghostButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                ) : null}
+                  <View style={styles.rowButtons}>
+                    <View style={styles.buttonWrapper}>
+                        <Button 
+                            title={editRoutineId ? 'Salvar' : 'Adicionar'} 
+                            onPress={editRoutineId ? handleEditRoutine : handleAddRoutine} 
+                            color={colors.primary} 
+                        />
+                    </View>
+                    {editRoutineId && <TouchableOpacity onPress={clearRoutineForm}><Text style={styles.ghostButtonText}>Cancelar</Text></TouchableOpacity>}
+                  </View>
+                  <View style={styles.sectionList}>
+                    {sortedRoutine.length ? renderRoutineList() : <Text style={styles.placeholder}>Lista vazia</Text>}
+                  </View>
               </View>
 
-              <View style={styles.sectionList}>
-                {routine.length ? (
-                  renderRoutineList()
-                ) : (
-                  <Text style={styles.placeholder}>Nenhuma atividade cadastrada.</Text>
-                )}
+              {/* SEÇÃO PECS */}
+              <View style={styles.cardSection}>
+                  <Text style={styles.header}>Botões de Fala</Text>
+                  <TextInput style={styles.input} value={editPecsId ? editPecsText : newPecsText} onChangeText={editPecsId ? setEditPecsText : setNewPecsText} placeholder="Texto falado" />
+                  <Text style={styles.label}>Categoria</Text>
+                  <View style={styles.categoryContainer}>
+                    {pecsCategories.map(cat => (
+                        <TouchableOpacity key={cat.id} onPress={() => editPecsId ? setEditPecsCategory(cat.id) : setNewPecsCategory(cat.id)} style={[styles.categoryButton, (editPecsId ? editPecsCategory : newPecsCategory) === cat.id && styles.categoryButtonSelected]}>
+                          <Text style={[styles.categoryText, (editPecsId ? editPecsCategory : newPecsCategory) === cat.id && styles.categoryTextSelected]}>{cat.name}</Text>
+                        </TouchableOpacity>
+                    ))}
+                  </View>
+                  <View style={styles.rowButtons}>
+                    <View style={styles.buttonWrapper}><Button title={editPecsId ? 'Salvar' : 'Adicionar'} onPress={editPecsId ? handleEditPecs : handleAddPecs} color={colors.primary} /></View>
+                    {editPecsId && <TouchableOpacity onPress={clearPecsForm}><Text style={styles.ghostButtonText}>Cancelar</Text></TouchableOpacity>}
+                  </View>
+                  <View style={styles.sectionList}>{pecsButtons.length ? renderPecsList() : <Text style={styles.placeholder}>Lista vazia</Text>}</View>
               </View>
-
-              <View style={styles.divider} />
-
-              {/* PECS */}
-              <Text style={styles.header}>Editar Botões "Quero Dizer"</Text>
-
-              <TextInput
-                style={styles.input}
-                value={editPecsId ? editPecsText : newPecsText}
-                onChangeText={editPecsId ? setEditPecsText : setNewPecsText}
-                placeholder={editPecsId ? 'Editar frase' : 'Nova frase PECS'}
-                placeholderTextColor={colors.disabled}
-                returnKeyType="done"
-              />
-
-              <Text style={styles.label}>Categoria</Text>
-              <View style={styles.categoryContainer}>
-                {pecsCategories.map(cat => {
-                  const isSelected = (editPecsId ? editPecsCategory : newPecsCategory) === cat.id;
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      onPress={() =>
-                        editPecsId ? setEditPecsCategory(cat.id) : setNewPecsCategory(cat.id)
-                      }
-                      style={[
-                        styles.categoryButton,
-                        isSelected ? styles.categoryButtonSelected : null,
-                      ]}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={[styles.categoryText, isSelected ? styles.categoryTextSelected : null]}>
-                        {cat.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={styles.rowButtons}>
-                <View style={styles.buttonWrapper}>
-                  <Button
-                    title={editPecsId ? 'Salvar Edição' : 'Adicionar Botão'}
-                    onPress={editPecsId ? handleEditPecs : handleAddPecs}
-                    color={colors.primary}
-                  />
-                </View>
-
-                {editPecsId ? (
-                  <TouchableOpacity style={styles.ghostButton} onPress={() => clearPecsForm()}>
-                    <Text style={styles.ghostButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-
-              <View style={styles.sectionList}>
-                {pecsButtons.length ? (
-                  renderPecsList()
-                ) : (
-                  <Text style={styles.placeholder}>Nenhum botão PECS cadastrado.</Text>
-                )}
-              </View>
-
-              <View style={{ height: 36 }} />
+              
+              <View style={{height: 40}} />
             </View>
           }
           keyExtractor={() => 'k'}
@@ -420,6 +443,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  safeCenter: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
   },
@@ -427,125 +456,189 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 30,
-    maxWidth: 900,
     width: '100%',
+    maxWidth: 800,
     alignSelf: 'center',
+  },
+  screenTitle: {
+    ...typography.title,
+    color: colors.primary,
+    marginBottom: 20,
+  },
+  cardSection: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  sectionHeaderClickable: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
   },
   header: {
     ...typography.subtitle,
     fontSize: 18,
     color: colors.text,
-    marginBottom: 12,
-    marginTop: 6,
+  },
+  helperText: {
+    ...typography.caption,
+    color: colors.disabled,
+    marginTop: 4,
   },
   label: {
     ...typography.body,
     fontSize: 14,
     color: colors.text,
-    marginBottom: 6,
+    marginTop: 10,
+    marginBottom: 5,
   },
   input: {
-    ...typography.body,
-    backgroundColor: colors.white,
-    borderColor: colors.disabled,
+    backgroundColor: '#f9f9f9',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 12,
+    borderColor: colors.disabled,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+  },
+  
+  // --- Estilos para o botão que "imita" um input (Time Picker) ---
+  inputClickable: {
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: colors.disabled,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inputText: {
+    ...typography.body,
     color: colors.text,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.disabled,
-    marginVertical: 22,
+  rowInputs: {
+    flexDirection: 'row',
+    marginBottom: 5,
   },
+  
+  // --- Botões e Ações ---
   rowButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginVertical: 10,
   },
   buttonWrapper: {
-    flex: 0,
-    marginRight: 12,
-    minWidth: 150,
-  },
-  ghostButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    marginRight: 10,
   },
   ghostButtonText: {
-    color: colors.accent,
-    ...typography.body,
+    color: colors.danger,
   },
+  
+  // --- Lista ---
   sectionList: {
-    marginTop: 6,
-    marginBottom: 6,
+    marginTop: 10,
   },
   listRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: colors.surface || colors.white,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.disabled,
+    borderBottomWidth: 1,
+    borderColor: '#f0f0f0',
   },
   itemText: {
     flex: 1,
-    ...typography.body,
     color: colors.text,
   },
   itemMeta: {
-    ...typography.caption,
     color: colors.disabled,
+    fontSize: 12,
+  },
+  itemTime: {
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: 'bold',
+    marginBottom: 2,
   },
   smallAction: {
-    marginLeft: 8,
+    marginLeft: 15,
   },
   editButton: {
     color: colors.accent,
-    ...typography.button,
+    fontWeight: '600',
   },
   removeButton: {
     color: colors.danger,
-    ...typography.button,
+    fontWeight: '600',
   },
   placeholder: {
-    ...typography.body,
     color: colors.disabled,
     fontStyle: 'italic',
     textAlign: 'center',
-    paddingVertical: 14,
+    padding: 10,
   },
+  
+  // --- Categorias ---
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 14,
   },
   categoryButton: {
     borderWidth: 1,
     borderColor: colors.disabled,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: colors.white,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   categoryButtonSelected: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
   },
   categoryText: {
-    ...typography.body,
     color: colors.text,
+    fontSize: 12,
   },
   categoryTextSelected: {
     color: colors.white,
+  },
+  
+  // --- Lock Screen ---
+  lockContainer: {
+    width: '90%',
+    maxWidth: 350,
+    backgroundColor: colors.white,
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  lockTitle: {
+    ...typography.title,
+    fontSize: 22,
+    marginTop: 15,
+    color: colors.text,
+  },
+  lockSubtitle: {
+    color: colors.disabled,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  lockInput: {
+    fontSize: 24,
+    letterSpacing: 5,
+    textAlign: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    padding: 10,
+    width: '100%',
+    marginBottom: 20,
   },
 });
 
