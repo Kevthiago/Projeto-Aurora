@@ -1,4 +1,3 @@
-// src/screens/MyRoutine.tsx
 import React, { useMemo } from 'react';
 import {
   View,
@@ -16,8 +15,7 @@ import IconButton from '../components/IconButton';
 const MyRoutineScreen = () => {
   const { routine, toggleRoutineItem } = useAppContext();
 
-  // REFAKTOR: Ordenação automática por horário (Crescente)
-  // Isso garante que a manhã apareça antes da tarde, independente da ordem de cadastro.
+  // Ordenação automática por horário (Crescente)
   const sortedRoutine = useMemo(() => {
     return [...routine].sort((a, b) => a.time.localeCompare(b.time));
   }, [routine]);
@@ -40,26 +38,26 @@ const MyRoutineScreen = () => {
         {/* Ícone Lateral */}
         <View style={styles.iconContainer}>
             <MaterialCommunityIcons
-            name={item.icon as any || 'calendar-check'} // Fallback se não tiver ícone
+            name={item.icon as any || 'calendar-check'} 
             size={40}
             color={item.completed ? colors.success : colors.primary}
             />
         </View>
 
         <View style={styles.textContainer}>
-          {/* Categoria (Contexto) */}
-          {item.category ? (
-            <Text style={[styles.category, item.completed && styles.textCompletedOpacity]}>
-              {item.category.toUpperCase()}
-            </Text>
-          ) : null}
+          {/* REFAKTOR: Agora mostramos 'GERAL' se não tiver categoria.
+             Isso corrige o visual para tarefas criadas anteriormente.
+          */}
+          <Text style={[styles.category, item.completed && styles.textCompletedOpacity]}>
+            {(item.category || 'Geral').toUpperCase()}
+          </Text>
 
           {/* Título da Atividade */}
           <Text style={[styles.title, item.completed && styles.textCompleted]}>
             {item.title}
           </Text>
 
-          {/* Horário (Destaque sutil) */}
+          {/* Horário */}
           <View style={styles.timeContainer}>
             <MaterialCommunityIcons name="clock-outline" size={14} color={item.completed ? colors.disabled : colors.text} />
             <Text style={[styles.time, item.completed && styles.textCompleted]}>
@@ -71,7 +69,7 @@ const MyRoutineScreen = () => {
         {/* Botão de Check */}
         <IconButton
           iconName={item.completed ? 'check-circle' : 'checkbox-blank-circle-outline'}
-          size={44} // Um pouco maior para facilitar o toque
+          size={44}
           color={item.completed ? colors.success : colors.disabled}
           onPress={() => handleToggle(item.id)}
           accessibilityLabel={item.completed ? 'Desmarcar tarefa' : 'Completar tarefa'}
@@ -90,7 +88,7 @@ const MyRoutineScreen = () => {
     );
   };
 
-  // Estado Vazio (Reforço Positivo)
+  // Estado Vazio
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
         <MaterialCommunityIcons name="emoticon-happy-outline" size={80} color={colors.disabled} />
@@ -102,7 +100,7 @@ const MyRoutineScreen = () => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={sortedRoutine} // Usando a lista ordenada
+        data={sortedRoutine} 
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         style={styles.listContainer}
@@ -135,7 +133,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.white,
-    borderRadius: 20, // Mais arredondado
+    borderRadius: 20, 
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,7 +147,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   cardCompleted: {
-    backgroundColor: '#F4F9F4', // Verde muito suave
+    backgroundColor: '#F4F9F4', 
     opacity: 0.8,
     borderColor: '#E0E0E0',
     elevation: 0,
@@ -175,7 +173,7 @@ const styles = StyleSheet.create({
   title: {
     ...typography.subtitle,
     color: colors.text,
-    fontSize: 20, // Tamanho legível
+    fontSize: 20, 
     marginBottom: 4,
   },
   timeContainer: {
@@ -203,11 +201,10 @@ const styles = StyleSheet.create({
   star: {
     position: 'absolute',
     top: 10,
-    right: 50, // Posicionado perto do check
+    right: 50, 
     transform: [{ rotate: '15deg' }],
     opacity: 0.8,
   },
-  // Empty State Styles
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
