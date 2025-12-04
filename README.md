@@ -1,179 +1,130 @@
-# 🧠 Projeto Aurora App — Backend (Spring Boot)
+# 🧩 Projeto Aurora — Assistência digital para Neurodivergentes não verbais com foco em auxílio à comunicação
 
-Este repositório contém o **backend oficial** do *Projeto Aurora*, um aplicativo mobile criado para auxiliar pessoas autistas e seus responsáveis através de:
+![Java](https://img.shields.io/badge/Java-17-orange?style=flat&logo=java)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.0-green?style=flat&logo=spring)
+![React Native](https://img.shields.io/badge/React_Native-v0.70+-blue?style=flat&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)
+![Expo](https://img.shields.io/badge/Expo-Go-black?style=flat&logo=expo)
 
-* Gerenciamento de dependentes
-* Calendário de atividades
-* Botões de comunicação por áudio
-* Registros automáticos de ações
-* Guia de autorregulação
-* Integração com **IA (ChatGPT)** para análises e recomendações personalizadas
-* Ambiente seguro com **JWT Authentication**
+Este repositório contém o código-fonte completo do *Projeto Aurora* (Usina de Projetos VI), uma solução híbrida composta por uma API Backend robusta e um Aplicativo Mobile focado em acessibilidade para pessoas com TEA (Transtorno do Espectro Autista).
 
 ---
 
-# 📌 Tecnologias Principais
+## 🎯 Visão Geral da Solução
 
-* **Java 17**
-* **Spring Boot 3**
-* Spring Web
-* Spring Security (JWT)
-* Spring Data JPA
-* MariaDB
-* Lombok
-* Swagger (OpenAPI)
-* Integração OpenAI (ChatGPT API)
-* Docker & Docker Compose
+O sistema é dividido em dois módulos principais, organizados nas seguintes pastas:
+
+1.  **`main/` (Backend):** API RESTful desenvolvida em Java/Spring Boot. Responsável pela lógica de negócios, banco de dados, autenticação e integração com IA.
+2.  **`frontend/` (Mobile):** Aplicativo mobile desenvolvido em React Native/Expo. Interface gamificada para o dependente e painel de gestão para o cuidador.
 
 ---
 
-# 📁 Estrutura do Projeto
+## 🛠️ Tecnologias Utilizadas
 
-```
-src/
- └── main/
-      ├── java/com/example/autismapp/
-      │    ├── config/          # Configurações gerais e segurança
-      │    ├── controller/      # Endpoints da API
-      │    ├── dto/             # Objetos de entrada e saída
-      │    ├── entity/          # Modelos JPA
-      │    ├── exception/       # Handler global de erros
-      │    ├── repository/      # Interfaces JPA
-      │    ├── security/        # JWT Authentication
-      │    ├── service/         # Lógica de negócio
-      │    │     └── impl/      # Implementações dos serviços
-      │    └── util/            # Utilitários (ex: JWT)
-      └── resources/
-           ├── application.properties
-           └── static/ templates/
-```
+### ☕ Backend (`/main`)
+* **Java 21** & **Spring Boot 3**
+* **MariaDB/MySQL** (Banco de Dados)
+* **Spring Security + JWT** (Autenticação)
+* **OpenAI API** (Inteligência Artificial)
+* **Docker** (Containerização)
+
+### 📱 Frontend (`/frontend`)
+* **React Native** (Framework UI)
+* **TypeScript** (Tipagem estática)
+* **Expo** (Plataforma de desenvolvimento)
+* **Axios** (Cliente HTTP para conectar com o Backend)
 
 ---
 
-# 🔐 Autenticação e Autorização
+## 🚀 Como Executar
 
-O sistema utiliza **JWT (JSON Web Token)** para autenticação.
-Endpoints públicos:
+Como o projeto possui duas partes distintas, é necessário rodá-las em terminais separados.
 
-* `POST /api/auth/register`
-* `POST /api/auth/login`
-* `POST /api/chatgpt/**`
-* `/swagger-ui/index.html#/`
-* `/swagger-ui/**`
-* `/v3/api-docs/**`
+### 1️⃣ Pré-requisitos
+* **Node.js** & **npm/yarn**
+* **Java JDK 17+** & **Maven**
+* **Docker** (Recomendado para subir o Banco de Dados)
+* Celular com o app **Expo Go** instalado (ou emulador Android/iOS)
 
-Todas as demais rotas exigem um token JWT válido:
+### 2️⃣ Rodando o Backend (API)
 
-```
-Authorization: Bearer <token>
-```
+1.  Acesse a pasta do backend:
+    ```bash
+    cd main
+    ```
 
----
+2.  Suba o banco de dados (certifique-se de estar na raiz onde está o `docker-compose.yml` ou ajuste o comando):
+    ```bash
+    # Se o docker-compose estiver na raiz do projeto:
+    cd ..
+    docker-compose up -d
+    cd main
+    ```
 
-# 🧠 Integração com OpenAI (ChatGPT)
+3.  Instale as dependências e inicie o servidor Spring Boot:
+    ```bash
+    mvn spring-boot:run
+    ```
+    *A API ficará disponível em: `http://localhost:8080`*
 
-O backend possui uma integração com a API da OpenAI para:
+### 3️⃣ Rodando o Frontend (App)
 
-* Gerar relatórios inteligentes sobre ações do dependente
-* Gerar recomendações ao cuidador
-* Ajudar no guia de autorregulação
+1.  Abra um novo terminal e acesse a pasta do frontend:
+    ```bash
+    cd frontend
+    ```
 
-A API Key deve ser configurada no:
+2.  Instale as dependências do projeto:
+    ```bash
+    npm install
+    # ou
+    yarn install
+    ```
 
-```
-application.properties
-```
+3.  Inicie o servidor do Expo:
+    ```bash
+    npx expo start
+    ```
 
-Ou via variável de ambiente:
-
-```
-OPENAI_API_KEY=suachaveaqui
-```
-
----
-
-# 🗄️ Banco de Dados
-
-Utiliza **MariaDB**.
-
-Credenciais padrão (docker-compose):
-
-```
-username: root  
-password: changeit  
-database: autismapp
-```
-
-Criação das tabelas via `spring.jpa.hibernate.ddl-auto=update`.
+4.  Escaneie o **QR Code** exibido no terminal com o app *Expo Go* no seu celular (Android/iOS).
 
 ---
 
-# 🐳 Executando com Docker
+## ⚙️ Configuração de Variáveis
 
-### 1. Build da aplicação
+### Backend (`main/src/main/resources/application.properties`)
+Certifique-se de configurar a conexão com o banco e a chave da OpenAI:
 
-```
-mvn clean package -DskipTests
-```
-
-### 2. Subindo containers
-
-```
-docker-compose up -d
+```properties
+spring.datasource.url=jdbc:mariadb://localhost:3306/autismapp
+openai.api.key=${OPENAI_API_KEY}
 ```
 
-A aplicação iniciará em:
+Frontend (frontend/src/services/api.ts)
+Para o App conseguir "conversar" com o Backend rodando no seu computador, você precisa apontar para o IP da sua máquina (não use localhost no mobile).
+
+Edite o arquivo de configuração da API:
 
 ```
-http://localhost:8080
+// Substitua pelo IP da sua máquina (ex: 192.168.0.15)
+const API_URL = "[http://192.168.1.15:8080/api](http://192.168.1.15:8080/api)";
+
+export default API_URL;
 ```
 
-E o banco em:
+## 👥 Autores
 
-```
-localhost:3306
-```
+### 🚀 Equipe Usina VI - Projeto Aurora
+
+Este projeto foi desenvolvido com dedicação pelos seguintes integrantes:
+
+* **Ana Cristina**
+* **David Neto** — *Backend & Integração* 🛠️
+* **Diana da Silva**
+* **Gabriel Koch**
+* **Kevin Thiago** — *Front & Integração* 📱
+* **Otávio Silva**
+* **Richard Luiz** — *Front & Integração* 📱
 
 ---
-
-# 📘 Documentação da API (Swagger)
-
-Disponível automaticamente em:
-
-```
-/swagger-ui/index.html
-```
-
----
-
-# 🧱 Estrutura das Entidades
-
-* **Caregiver** — responsável do dependente
-* **Dependent** — pessoa autista cadastrada
-* **CalendarEvent** — eventos/rotinas
-* **SoundButton** — botões com áudio para comunicação
-* **ActionLog** — registro das ações realizadas
-* **ResourceGuide** — guia de autorregulação
-
----
-
-# 🧪 Testes
-
-Inclui dependência do `spring-boot-starter-test` para testes unitários e de integração.
-
----
-
-# 🚀 Como Contribuir
-
-1. Faça um fork do projeto
-2. Crie uma branch com sua feature
-3. Abra um Pull Request
-4. Aguarde revisão
-
----
-
-# 👤 Autor
-
-**David Neto**
-Backend Developer – Spring Boot
-Ambição em Full Stack e liderança técnica
+*🎓 Desenvolvido na Newton Paiva — 2025*
